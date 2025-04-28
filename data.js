@@ -1,7 +1,7 @@
 // data.js
 
 // --- Use backend API endpoint ---
-const BACKEND_API_URL = "http://localhost:8080/api/getSheetData"
+const BACKEND_API_URL = "/api/getSheetData"
 
 /**
  * Converts a Google Sheet/Excel serial number date to a JavaScript Date object.
