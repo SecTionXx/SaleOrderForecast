@@ -1,6 +1,15 @@
 {
+  "name": "order-forecast",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node api/getSheetData.js",
+    "build": "echo 'Build completed'"
+  },
   "dependencies": {
     "dotenv": "^16.5.0",
     "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
