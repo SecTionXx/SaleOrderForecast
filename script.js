@@ -8,6 +8,8 @@ let allDealsData = [] // Holds the data fetched from the sheet
 let monthlyForecastChart = null
 let dealStageChart = null
 let salesPerformanceChart = null
+let currentPage = 1
+const rowsPerPage = 50
 
 const chartColors = {
   "Proposal Sent": "rgba(59, 130, 246, 0.8)",
@@ -24,6 +26,19 @@ const salesRepColors = [
   "rgba(139, 92, 246, 0.7)",
   "rgba(236, 72, 153, 0.7)",
 ]
+
+// --- Persistent Filter/Sort State ---
+const FILTERS_KEY = 'orderforecast_filters';
+function saveFiltersToStorage(filters) {
+  localStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
+}
+function loadFiltersFromStorage() {
+  try {
+    return JSON.parse(localStorage.getItem(FILTERS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
 
 // --- Main Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -623,27 +638,100 @@ function initializeFilteringAndUpdates() {
     }
   }
 
+  // Restore filters from storage
+  const saved = loadFiltersFromStorage();
+  if (saved) {
+    if (salesRepFilterEl && saved.salesRep) salesRepFilterEl.value = saved.salesRep;
+    if (dealStageFilterEl && saved.dealStage) dealStageFilterEl.value = saved.dealStage;
+    if (forecastMonthFilterEl && saved.forecastMonth) forecastMonthFilterEl.value = saved.forecastMonth;
+    if (searchDealFilterEl && saved.search) searchDealFilterEl.value = saved.search;
+    if (startDateFilterEl && saved.startDate) startDateFilterEl.value = saved.startDate;
+    if (endDateFilterEl && saved.endDate) endDateFilterEl.value = saved.endDate;
+    if (saved.sortKey) currentSort.key = saved.sortKey;
+    if (saved.sortDir) currentSort.direction = saved.sortDir;
+    if (saved.page) currentPage = saved.page;
+  }
+
   filterControls.forEach((control) => {
     const eventType = control.tagName === "SELECT" ? "change" : "input"
-    control.addEventListener(eventType, applyFiltersAndRefreshUI)
-  })
-  // Add sorting event listeners
-  document.querySelectorAll("th.sortable").forEach((th) => {
-    th.style.cursor = "pointer"
-    th.addEventListener("click", () => {
-      const key = th.getAttribute("data-sort")
-      if (currentSort.key === key) {
-        currentSort.direction = currentSort.direction === "asc" ? "desc" : "asc"
-      } else {
-        currentSort.key = key
-        currentSort.direction = "asc"
-      }
-      updateSortIndicators()
-      applyFiltersAndRefreshUI()
+    control.addEventListener(eventType, () => {
+      resetPagination();
+      saveFiltersToStorage({
+        salesRep: salesRepFilterEl?.value,
+        dealStage: dealStageFilterEl?.value,
+        forecastMonth: forecastMonthFilterEl?.value,
+        search: searchDealFilterEl?.value,
+        startDate: startDateFilterEl?.value,
+        endDate: endDateFilterEl?.value,
+        sortKey: currentSort.key,
+        sortDir: currentSort.direction,
+        page: 1
+      });
+      applyFiltersAndRefreshUI();
     })
   })
+  // Save sort state on header click
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      saveFiltersToStorage({
+        salesRep: salesRepFilterEl?.value,
+        dealStage: dealStageFilterEl?.value,
+        forecastMonth: forecastMonthFilterEl?.value,
+        search: searchDealFilterEl?.value,
+        startDate: startDateFilterEl?.value,
+        endDate: endDateFilterEl?.value,
+        sortKey: currentSort.key,
+        sortDir: currentSort.direction,
+        page: 1
+      });
+    });
+  });
+  // --- Pagination Controls ---
+  function setupPaginationControls(filteredCount) {
+    const buttons = document.querySelectorAll(".pagination-button");
+    if (buttons.length === 2) {
+      buttons[0].onclick = () => {
+        if (currentPage > 1) {
+          currentPage--;
+          saveFiltersToStorage({
+            salesRep: salesRepFilterEl?.value,
+            dealStage: dealStageFilterEl?.value,
+            forecastMonth: forecastMonthFilterEl?.value,
+            search: searchDealFilterEl?.value,
+            startDate: startDateFilterEl?.value,
+            endDate: endDateFilterEl?.value,
+            sortKey: currentSort.key,
+            sortDir: currentSort.direction,
+            page: currentPage
+          });
+          applyFiltersAndRefreshUI();
+        }
+      };
+      buttons[1].onclick = () => {
+        if (currentPage * rowsPerPage < filteredCount) {
+          currentPage++;
+          saveFiltersToStorage({
+            salesRep: salesRepFilterEl?.value,
+            dealStage: dealStageFilterEl?.value,
+            forecastMonth: forecastMonthFilterEl?.value,
+            search: searchDealFilterEl?.value,
+            startDate: startDateFilterEl?.value,
+            endDate: endDateFilterEl?.value,
+            sortKey: currentSort.key,
+            sortDir: currentSort.direction,
+            page: currentPage
+          });
+          applyFiltersAndRefreshUI();
+        }
+      };
+    }
+  }
   console.log("script.js: Applying initial filters...")
   applyFiltersAndRefreshUI() // Apply initial filter state
+}
+
+function resetPagination() {
+  currentPage = 1;
 }
 
 // --- Sorting State ---
