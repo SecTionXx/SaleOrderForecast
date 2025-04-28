@@ -22,6 +22,16 @@ module.exports = async (req, res) => {
   console.log("SHEET_NAME:", sheetName)
   console.log("SHEET_RANGE:", sheetRange)
 
+  // Debug: Log all environment variables (do NOT log secrets in production)
+  console.log("DEBUG ENV:", {
+    GOOGLE_API_KEY_EXISTS: !!apiKey,
+    GOOGLE_SHEET_ID: sheetId,
+    SHEET_NAME: sheetName,
+    SHEET_RANGE: sheetRange,
+    NODE_ENV: process.env.NODE_ENV,
+    ALL_ENV: Object.keys(process.env),
+  })
+
   res.setHeader("Access-Control-Allow-Origin", "*")
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS")
   res.setHeader("Access-Control-Allow-Headers", "Content-Type")
