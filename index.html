@@ -6,10 +6,7 @@
     <title>Order Forecast Dashboard (Google Sheet)</title>
 
     <!-- External Libraries & Frameworks -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/@tailwindcss/ui@latest/dist/tailwind-ui.min.css"
-      rel="stylesheet"
-    />
+    <!-- Removed outdated @tailwindcss/ui link -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -56,25 +53,51 @@
       Chart.register(DoughnutLabel)
     </script>
 
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <!-- Link to External CSS -->
     <link rel="stylesheet" href="style.css" />
     <!-- ADD Feather Icons CDN before any script that uses feather.replace() -->
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+
+    <style>
+      /* Direct styling for table container to override any conflicts */
+      .table-container {
+        background-color: white !important;
+        border-radius: 0.5rem !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        border: 1px solid #e5e7eb !important;
+        margin-bottom: 1.5rem !important;
+        overflow-x: auto !important;
+      }
+
+      /* Table styles */
+      .table-container table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+
+      /* Table header styles */
+      .table-container thead {
+        background-color: #f9fafb !important;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+    </style>
   </head>
-  <body class="bg-gray-100 p-4 md:p-8">
+  <body class="bg-gray-100">
+    <script>
+      // Redirect to login if not authenticated
+      if (localStorage.getItem("orderforecast_auth") !== "1") {
+        window.location.href = "login.html"
+      }
+    </script>
+
     <!-- Loading Indicator -->
-    <div
-      id="loading-overlay"
-      style="
-        display: flex;
-        position: fixed;
-        inset: 0;
-        background-color: rgba(255, 255, 255, 0.8);
-        z-index: 100;
-        justify-content: center;
-        align-items: center;
-      "
-    >
+    <div id="loading-overlay">
       <div class="text-center">
         <svg
           class="animate-spin h-8 w-8 text-indigo-600 mx-auto mb-2"
@@ -93,7 +116,8 @@
           <path
             class="opacity-75"
             fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm
+          "
           ></path>
         </svg>
         <p class="text-lg font-medium text-gray-700">Loading Data...</p>
@@ -101,281 +125,414 @@
     </div>
 
     <!-- Error Message Area -->
-    <div
-      id="error-message-area"
-      style="
-        display: none;
-        background-color: #fee2e2;
-        color: #dc2626;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        border: 1px solid #fecaca;
-        border-radius: 0.375rem;
-      "
-    >
-      <!-- Error message will be inserted here -->
+    <div id="error-message-area"></div>
+
+    <!-- Fixed Navbar with Header and Filters -->
+    <div class="fixed-navbar">
+      <div class="dashboard-header">
+        <div class="dashboard-title">
+          <h1>Order Forecast</h1>
+          <p class="subtitle">Google Sheet Data</p>
+        </div>
+
+        <div class="navbar-actions">
+          <button id="toggle-summary-btn" class="toggle-summary-btn">
+            <i data-feather="bar-chart-2"></i>
+            <span>Summary</span>
+          </button>
+
+          <button id="toggle-filters-btn" class="toggle-filters-btn">
+            <i data-feather="filter"></i>
+            <span>Filters</span>
+          </button>
+
+          <button
+            onclick="localStorage.removeItem('orderforecast_auth');window.location.href='login.html'"
+            class="logout-btn"
+          >
+            <i data-feather="log-out"></i>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary Cards Row -->
+      <div class="summary-cards-grid">
+        <div class="summary-card blue">
+          <h3>Total Forecast</h3>
+          <p class="value" id="summary-total-value">฿208,150,000</p>
+          <div class="card-footer">
+            <span class="card-label" id="summary-total-deals">12 deals</span>
+            <span class="trend" id="summary-total-trend">
+              <i data-feather="trending-up" class="trend-icon"></i>
+              <span id="summary-total-change">10%</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="summary-card green">
+          <h3>Weighted Value</h3>
+          <p class="value" id="summary-weighted-value">฿72,375,000</p>
+          <div class="card-footer">
+            <span class="card-label">Expected</span>
+            <span class="trend" id="summary-weighted-trend">
+              <i data-feather="trending-up" class="trend-icon"></i>
+              <span id="summary-weighted-change">10%</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="summary-card yellow">
+          <h3>Pipeline Deals</h3>
+          <p class="value" id="summary-pipeline-deals">5</p>
+          <div class="card-footer">
+            <span class="card-label">Active</span>
+            <span class="trend" id="summary-pipeline-trend">
+              <i data-feather="trending-down" class="trend-icon"></i>
+              <span id="summary-pipeline-change">17%</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="summary-card purple">
+          <h3>Win Rate</h3>
+          <p class="value" id="summary-win-rate">71%</p>
+          <div class="card-footer">
+            <span class="card-label">Closed</span>
+            <span class="trend" id="summary-winrate-trend">
+              <i data-feather="trending-up" class="trend-icon"></i>
+              <span id="summary-winrate-change">4%</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters section (collapsible) -->
+      <div class="filters-section" id="filters-section">
+        <div class="filter-row">
+          <div class="filter-control">
+            <label for="sales-rep-filter">Sales Rep</label>
+            <select id="sales-rep-filter" name="sales-rep">
+              <option value="">All</option>
+              <option value="Boworn">Boworn</option>
+              <option value="Lalipas">Lalipas</option>
+            </select>
+          </div>
+
+          <div class="filter-control">
+            <label for="deal-stage-filter">Deal Stage</label>
+            <select id="deal-stage-filter" name="deal-stage">
+              <option value="">All</option>
+              <option value="Closed Won">Closed Won</option>
+              <option value="Negotiation">Negotiation</option>
+              <option value="Proposal Sent">Proposal Sent</option>
+              <option value="Lead">Lead</option>
+              <option value="Closed Lost">Closed Lost</option>
+            </select>
+          </div>
+
+          <div class="filter-control">
+            <label for="forecast-month-filter">Forecast Month</label>
+            <select id="forecast-month-filter" name="forecast-month">
+              <option value="">All</option>
+              <option value="2025-04">Apr-25</option>
+              <option value="2025-05">May-25</option>
+              <option value="2025-06">Jun-25</option>
+              <option value="2025-07">Jul-25</option>
+            </select>
+          </div>
+
+          <div class="filter-control">
+            <label for="search-deal-filter">Search</label>
+            <input
+              type="text"
+              id="search-deal-filter"
+              name="search-deal"
+              placeholder="Customer/Project name..."
+            />
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <div class="filter-control">
+            <label for="start-date-filter">Start Date</label>
+            <input type="date" id="start-date-filter" name="start-date" />
+          </div>
+
+          <div class="filter-control">
+            <label for="end-date-filter">End Date</label>
+            <input type="date" id="end-date-filter" name="end-date" />
+          </div>
+        </div>
+      </div>
     </div>
 
-    <header class="mb-6 border-b pb-4">
-      <h1 class="text-2xl md:text-3xl font-semibold text-gray-800">
-        Order Forecast Dashboard
-      </h1>
-      <p class="text-gray-500">Data from Google Sheet</p>
-    </header>
-
-    <!-- Filters Section -->
-    <section class="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-      <div>
-        <label
-          for="sales-rep-filter"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Sales Rep</label
-        >
-        <select
-          id="sales-rep-filter"
-          name="sales-rep"
-          class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-        >
-          <option value="">All</option>
-          <!-- Options will be populated dynamically -->
-        </select>
-      </div>
-      <div>
-        <label
-          for="deal-stage-filter"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Deal Stage</label
-        >
-        <select
-          id="deal-stage-filter"
-          name="deal-stage"
-          class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-        >
-          <option value="">All</option>
-          <option value="Proposal Sent">Proposal Sent</option>
-          <option value="Negotiation">Negotiation</option>
-          <option value="Verbal Agreement">Verbal Agreement</option>
-          <option value="Closed Won">Closed Won</option>
-          <option value="Closed Lost">Closed Lost</option>
-        </select>
-      </div>
-      <div>
-        <label
-          for="forecast-month-filter"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Forecast Month</label
-        >
-        <select
-          id="forecast-month-filter"
-          name="forecast-month"
-          class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-        >
-          <option value="">All</option>
-          <option value="2025-04">Apr-25</option>
-          <option value="2025-05">May-25</option>
-          <option value="2025-06">Jun-25</option>
-          <option value="2025-07">Jul-25</option>
-        </select>
-      </div>
-      <div>
-        <label
-          for="search-deal-filter"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Search</label
-        >
-        <input
-          type="text"
-          id="search-deal-filter"
-          name="search-deal"
-          placeholder="Customer/Project name..."
-          class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-        />
-      </div>
-    </section>
-
-    <!-- Summary Cards Section -->
-    <section class="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="summary-card bg-blue-50 border-blue-200">
-        <h3 class="text-sm font-medium text-blue-700">Total Forecast Value</h3>
-        <p
-          class="text-2xl font-semibold text-blue-900 mt-1"
-          id="summary-total-value"
-        >
-          ฿ 0
-        </p>
-        <p class="text-xs text-blue-600 mt-1" id="summary-total-deals">
-          from 0 deals
-        </p>
-        <p
-          class="text-xs text-gray-500 mt-1 flex items-center"
-          id="summary-total-trend"
-        >
-          <i
-            data-lucide="minus"
-            class="w-4 h-4 mr-1 trend-icon trend-neutral"
-          ></i>
-          <span id="summary-total-change">-- vs Prev. Period</span>
-        </p>
-      </div>
-      <div class="summary-card bg-green-50 border-green-200">
-        <h3 class="text-sm font-medium text-green-700">Total Weighted Value</h3>
-        <p
-          class="text-2xl font-semibold text-green-900 mt-1"
-          id="summary-weighted-value"
-        >
-          ฿ 0
-        </p>
-        <p class="text-xs text-green-600 mt-1">Expected to be realized</p>
-        <p
-          class="text-xs text-gray-500 mt-1 flex items-center"
-          id="summary-weighted-trend"
-        >
-          <i
-            data-lucide="minus"
-            class="w-4 h-4 mr-1 trend-icon trend-neutral"
-          ></i>
-          <span id="summary-weighted-change">-- vs Prev. Period</span>
-        </p>
-      </div>
-      <div class="summary-card bg-yellow-50 border-yellow-200">
-        <h3 class="text-sm font-medium text-yellow-700">Pipeline Deals</h3>
-        <p
-          class="text-2xl font-semibold text-yellow-900 mt-1"
-          id="summary-pipeline-deals"
-        >
-          0
-        </p>
-        <p class="text-xs text-yellow-600 mt-1">Excludes Closed Won/Lost</p>
-        <p
-          class="text-xs text-gray-500 mt-1 flex items-center"
-          id="summary-pipeline-trend"
-        >
-          <i
-            data-lucide="minus"
-            class="w-4 h-4 mr-1 trend-icon trend-neutral"
-          ></i>
-          <span id="summary-pipeline-change">-- vs Prev. Period</span>
-        </p>
-      </div>
-      <div class="summary-card bg-purple-50 border-purple-200">
-        <h3 class="text-sm font-medium text-purple-700">Win Rate</h3>
-        <p
-          class="text-2xl font-semibold text-purple-900 mt-1"
-          id="summary-win-rate"
-        >
-          0%
-        </p>
-        <p class="text-xs text-purple-600 mt-1">Calculated from closed deals</p>
-        <p
-          class="text-xs text-gray-500 mt-1 flex items-center"
-          id="summary-winrate-trend"
-        >
-          <i
-            data-lucide="minus"
-            class="w-4 h-4 mr-1 trend-icon trend-neutral"
-          ></i>
-          <span id="summary-winrate-change">-- vs Prev. Period</span>
-        </p>
-      </div>
-    </section>
-
-    <!-- Charts Section -->
-    <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="chart-container">
-        <h3 class="chart-title">Forecast & Actual by Month (Weighted)</h3>
-        <div class="h-72">
-          <canvas id="monthlyForecastChart"></canvas>
+    <!-- Main content area -->
+    <div class="main-content" id="main-content">
+      <!-- Charts Section -->
+      <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="chart-container">
+          <h3 class="chart-title">Forecast &amp; Actual by Month (Weighted)</h3>
+          <div class="h-72">
+            <canvas id="monthlyForecastChart"></canvas>
+          </div>
         </div>
-      </div>
-      <div class="chart-container">
-        <h3 class="chart-title">Deal Stage Proportion (Count)</h3>
-        <div class="h-72 flex items-center justify-center relative">
-          <canvas
-            id="dealStageChart"
-            style="max-width: 320px; max-height: 320px"
-          ></canvas>
-        </div>
-      </div>
-      <div class="chart-container md:col-span-2">
-        <h3 class="chart-title">Sales Performance (Weighted Value)</h3>
-        <div class="h-72">
-          <canvas id="salesPerformanceChart"></canvas>
-        </div>
-      </div>
-    </section>
-
-    <!-- Table Section -->
-    <section>
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">
-        Order Forecast Details
-      </h2>
-      <div class="overflow-x-auto bg-white rounded-lg shadow border">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-100">
-            <tr>
-              <th scope="col" class="th-style">Customer</th>
-              <th scope="col" class="th-style">Project/Deal</th>
-              <th scope="col" class="th-style text-right">Total Value</th>
-              <th scope="col" class="th-style text-center">% Prob.</th>
-              <th scope="col" class="th-style text-right">Weighted Value</th>
-              <th scope="col" class="th-style">Deal Stage</th>
-              <th scope="col" class="th-style text-center">Forecast Close</th>
-              <th scope="col" class="th-style">Sales Rep</th>
-              <th scope="col" class="th-style text-center">Last Updated</th>
-              <th scope="col" class="th-style text-center">Actions</th>
-            </tr>
-          </thead>
-          <!-- **** TBODY is initially empty. Populated by script.js **** -->
-          <tbody
-            id="forecast-table-body"
-            class="bg-white divide-y divide-gray-200"
+        <div class="chart-container">
+          <h3 class="chart-title">Deal Stage Proportion (Count)</h3>
+          <div
+            class="h-96 flex items-center justify-center relative"
+            id="dealStageChart-wrapper"
           >
-            <!-- Example Row Structure (for reference, will be removed by JS):
-                      <tr data-sales-rep="..." data-deal-stage="..." data-close-date="..." data-value="..." data-weighted-value="...">
-                          <td class="td-style customer-name">...</td>
-                          <td class="td-style project-name">...</td>
-                          <td class="td-style text-right">...</td>
-                          <td class="td-style text-center">...%</td>
-                          <td class="td-style font-medium text-right weighted-value-cell">...</td>
-                          <td class="td-style deal-stage-cell"><span class="status-badge ...">...</span></td>
-                          <td class="td-style text-center close-date-cell">...</td>
-                          <td class="td-style sales-rep-cell">...</td>
-                          <td class="td-style text-center">...</td>
-                          <td class="td-style text-center action-cell">
-                              <button class="action-button"><span data-feather="edit-2"></span></button>
-                              <button class="action-button ml-2"><span data-feather="message-square"></span></button>
-                          </td>
-                      </tr>
-                       -->
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      <div class="mt-4 flex justify-between items-center">
-        <span class="text-sm text-gray-700" id="pagination-info">
-          Showing 0 to 0 of 0 entries
-        </span>
-        <div class="pagination-buttons">
-          <button class="pagination-button" disabled>
-            <span data-feather="chevron-left"></span>
-          </button>
-          <button class="pagination-button" disabled>
-            <span data-feather="chevron-right"></span>
-          </button>
+            <canvas id="dealStageChart"></canvas>
+          </div>
         </div>
-      </div>
-    </section>
-    <!-- End max-w-7xl -->
+
+        <!-- Left column charts -->
+        <div class="chart-container">
+          <h3 class="chart-title">Sales Performance (Weighted Value)</h3>
+          <div class="h-80">
+            <canvas id="salesPerformanceChart"></canvas>
+          </div>
+        </div>
+        <!-- Right column charts -->
+        <div class="chart-container">
+          <h3 class="chart-title">
+            Forecast Accuracy (Weighted vs. Actual Closed)
+          </h3>
+          <div class="h-80">
+            <canvas id="forecastAccuracyChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Left column charts -->
+        <div class="chart-container">
+          <h3 class="chart-title">Sales Funnel (Deal Count by Stage)</h3>
+          <div class="h-80">
+            <canvas id="salesFunnelChart"></canvas>
+          </div>
+        </div>
+        <!-- Right column charts -->
+        <div class="chart-container">
+          <h3 class="chart-title">Deal Aging by Stage (Count by Age Bucket)</h3>
+          <div class="h-80">
+            <canvas id="dealAgingChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Table Section -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">
+          Order Forecast Details
+        </h2>
+        <div
+          class="table-container"
+          style="
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+          "
+        >
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-100">
+              <tr>
+                <th
+                  scope="col"
+                  class="th-style sortable"
+                  data-sort="customerName"
+                >
+                  Customer <span class="sort-indicator"></span>
+                </th>
+                <th
+                  scope="col"
+                  class="th-style sortable"
+                  data-sort="projectName"
+                >
+                  Project/Deal <span class="sort-indicator"></span>
+                </th>
+                <th
+                  scope="col"
+                  class="th-style text-right sortable"
+                  data-sort="totalValue"
+                >
+                  Total Value <span class="sort-indicator"></span>
+                </th>
+                <th
+                  scope="col"
+                  class="th-style text-center sortable"
+                  data-sort="probabilityPercent"
+                >
+                  % Prob. <span class="sort-indicator"></span>
+                </th>
+                <th
+                  scope="col"
+                  class="th-style text-right sortable"
+                  data-sort="weightedValue"
+                >
+                  Weighted Value <span class="sort-indicator"></span>
+                </th>
+                <th scope="col" class="th-style sortable" data-sort="dealStage">
+                  Deal Stage <span class="sort-indicator"></span>
+                </th>
+                <th
+                  scope="col"
+                  class="th-style text-center sortable"
+                  data-sort="expectedCloseDate"
+                >
+                  Forecast Close <span class="sort-indicator"></span>
+                </th>
+                <th scope="col" class="th-style sortable" data-sort="salesRep">
+                  Sales Rep <span class="sort-indicator"></span>
+                </th>
+                <th
+                  scope="col"
+                  class="th-style text-center sortable"
+                  data-sort="lastUpdated"
+                >
+                  Last Updated <span class="sort-indicator"></span>
+                </th>
+                <th
+                  scope="col"
+                  class="th-style text-center sortable"
+                  data-sort="ageDays"
+                >
+                  Age (Days) <span class="sort-indicator"></span>
+                </th>
+                <th scope="col" class="th-style text-center">Actions</th>
+              </tr>
+            </thead>
+            <!-- **** TBODY is initially empty. Populated by script.js **** -->
+            <tbody
+              id="forecast-table-body"
+              class="bg-white divide-y divide-gray-200"
+            >
+              <!-- Row structure will be dynamically generated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Enhanced Pagination -->
+        <div class="pagination-controls mt-4">
+          <span class="text-sm text-gray-700" id="pagination-info">
+            Showing <span class="font-medium">1</span> to
+            <span class="font-medium">12</span> of
+            <span class="font-medium">12</span> total entries (matching filters)
+          </span>
+          <div class="pagination-buttons">
+            <button class="pagination-button" id="prev-page" disabled="">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="feather feather-chevron-left"
+              >
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <span class="pagination-button active" id="page-1">1</span>
+            <button class="pagination-button" id="next-page" disabled="">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="feather feather-chevron-right"
+              >
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <!-- End main-content -->
 
     <!-- Load main script as MODULE -->
     <script type="module" src="script.js"></script>
+
     <!-- Feather icons auto-replacement -->
     <script>
       // Replace all feather icons on initial load
-      if (window.feather && typeof window.feather.replace === "function") {
-        window.feather.replace()
-      }
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.feather && typeof window.feather.replace === "function") {
+          window.feather.replace()
+        }
+
+        // Add filter toggle functionality
+        const toggleBtn = document.getElementById("toggle-filters-btn")
+        const filtersSection = document.getElementById("filters-section")
+        const mainContent = document.getElementById("main-content")
+
+        // Initialize filters as collapsed
+        filtersSection.classList.remove("expanded")
+
+        toggleBtn.addEventListener("click", function () {
+          filtersSection.classList.toggle("expanded")
+          mainContent.classList.toggle("filters-hidden")
+
+          // Update button state
+          this.classList.toggle("active")
+
+          // Refresh feather icons after DOM changes
+          if (window.feather && typeof window.feather.replace === "function") {
+            window.feather.replace()
+          }
+        })
+
+        // Add summary cards toggle functionality
+        const toggleSummaryBtn = document.getElementById("toggle-summary-btn")
+        const summaryCardsGrid = document.querySelector(".summary-cards-grid")
+
+        // Initialize summary cards as expanded by default
+        toggleSummaryBtn.classList.add("active")
+
+        toggleSummaryBtn.addEventListener("click", function () {
+          summaryCardsGrid.classList.toggle("collapsed")
+          this.classList.toggle("active")
+
+          // Update body padding when summary is toggled
+          if (summaryCardsGrid.classList.contains("collapsed")) {
+            document.body.style.paddingTop = `${
+              document.querySelector(".dashboard-header").offsetHeight
+            }px`
+          } else {
+            document.body.style.paddingTop = `calc(${
+              document.querySelector(".dashboard-header").offsetHeight
+            }px + var(--summary-cards-height))`
+          }
+
+          // Refresh feather icons after DOM changes
+          if (window.feather && typeof window.feather.replace === "function") {
+            window.feather.replace()
+          }
+        })
+
+        // Set initial date values if not already set
+        const startDate = document.getElementById("start-date-filter")
+        const endDate = document.getElementById("end-date-filter")
+
+        if (!startDate.value) {
+          startDate.value = "2025-03-01"
+        }
+
+        if (!endDate.value) {
+          endDate.value = "2025-12-06"
+        }
+      })
     </script>
   </body>
 </html>
