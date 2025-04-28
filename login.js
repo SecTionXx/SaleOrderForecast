@@ -4,7 +4,7 @@ const AUTH_USER = "bgrimmtech"
 const AUTH_PASS = "lifecycle"
 const AUTH_KEY = "orderforecast_auth"
 
-document.getElementById("login-form").addEventListener("submit", function(e) {
+document.getElementById("login-form").addEventListener("submit", function (e) {
   e.preventDefault()
   const username = document.getElementById("username").value.trim()
   const password = document.getElementById("password").value

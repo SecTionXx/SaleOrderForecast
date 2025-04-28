@@ -64,13 +64,25 @@
   <body class="bg-gray-100 p-4 md:p-8">
     <script>
       // Redirect to login if not authenticated
-      if (localStorage.getItem('orderforecast_auth') !== '1') {
-        window.location.href = 'login.html';
+      if (localStorage.getItem("orderforecast_auth") !== "1") {
+        window.location.href = "login.html"
       }
     </script>
     <!-- Logout Button -->
-    <div style="text-align:right; margin-bottom:1rem;">
-      <button onclick="localStorage.removeItem('orderforecast_auth');window.location.href='login.html'" style="background:#ef4444;color:#fff;padding:0.5rem 1rem;border:none;border-radius:0.375rem;cursor:pointer;">Logout</button>
+    <div style="text-align: right; margin-bottom: 1rem">
+      <button
+        onclick="localStorage.removeItem('orderforecast_auth');window.location.href='login.html'"
+        style="
+          background: #ef4444;
+          color: #fff;
+          padding: 0.5rem 1rem;
+          border: none;
+          border-radius: 0.375rem;
+          cursor: pointer;
+        "
+      >
+        Logout
+      </button>
     </div>
 
     <!-- Loading Indicator -->
@@ -163,11 +175,7 @@
           class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
         >
           <option value="">All</option>
-          <option value="Proposal Sent">Proposal Sent</option>
-          <option value="Negotiation">Negotiation</option>
-          <option value="Verbal Agreement">Verbal Agreement</option>
-          <option value="Closed Won">Closed Won</option>
-          <option value="Closed Lost">Closed Lost</option>
+          <!-- Options will be populated dynamically -->
         </select>
       </div>
       <div>
@@ -199,6 +207,32 @@
           id="search-deal-filter"
           name="search-deal"
           placeholder="Customer/Project name..."
+          class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        />
+      </div>
+      <div>
+        <label
+          for="start-date-filter"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Start Date</label
+        >
+        <input
+          type="date"
+          id="start-date-filter"
+          name="start-date"
+          class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        />
+      </div>
+      <div>
+        <label
+          for="end-date-filter"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >End Date</label
+        >
+        <input
+          type="date"
+          id="end-date-filter"
+          name="end-date"
           class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
         />
       </div>
@@ -324,15 +358,57 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-100">
             <tr>
-              <th scope="col" class="th-style">Customer</th>
-              <th scope="col" class="th-style">Project/Deal</th>
-              <th scope="col" class="th-style text-right">Total Value</th>
-              <th scope="col" class="th-style text-center">% Prob.</th>
-              <th scope="col" class="th-style text-right">Weighted Value</th>
-              <th scope="col" class="th-style">Deal Stage</th>
-              <th scope="col" class="th-style text-center">Forecast Close</th>
-              <th scope="col" class="th-style">Sales Rep</th>
-              <th scope="col" class="th-style text-center">Last Updated</th>
+              <th
+                scope="col"
+                class="th-style sortable"
+                data-sort="customerName"
+              >
+                Customer <span class="sort-indicator"></span>
+              </th>
+              <th scope="col" class="th-style sortable" data-sort="projectName">
+                Project/Deal <span class="sort-indicator"></span>
+              </th>
+              <th
+                scope="col"
+                class="th-style text-right sortable"
+                data-sort="totalValue"
+              >
+                Total Value <span class="sort-indicator"></span>
+              </th>
+              <th
+                scope="col"
+                class="th-style text-center sortable"
+                data-sort="probabilityPercent"
+              >
+                % Prob. <span class="sort-indicator"></span>
+              </th>
+              <th
+                scope="col"
+                class="th-style text-right sortable"
+                data-sort="weightedValue"
+              >
+                Weighted Value <span class="sort-indicator"></span>
+              </th>
+              <th scope="col" class="th-style sortable" data-sort="dealStage">
+                Deal Stage <span class="sort-indicator"></span>
+              </th>
+              <th
+                scope="col"
+                class="th-style text-center sortable"
+                data-sort="expectedCloseDate"
+              >
+                Forecast Close <span class="sort-indicator"></span>
+              </th>
+              <th scope="col" class="th-style sortable" data-sort="salesRep">
+                Sales Rep <span class="sort-indicator"></span>
+              </th>
+              <th
+                scope="col"
+                class="th-style text-center sortable"
+                data-sort="lastUpdated"
+              >
+                Last Updated <span class="sort-indicator"></span>
+              </th>
               <th scope="col" class="th-style text-center">Actions</th>
             </tr>
           </thead>

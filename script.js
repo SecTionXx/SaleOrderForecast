@@ -53,6 +53,7 @@ async function fetchDataAndInitializeDashboard() {
         `script.js: Valid data received (${allDealsData.length} rows). Populating UI...`
       )
       populateSalesRepDropdown(allDealsData) // <-- Add this line
+      populateDealStageDropdown(allDealsData)
       populateTable(allDealsData)
       initializeFilteringAndUpdates() // Setup filters AFTER table exists
 
@@ -126,6 +127,33 @@ function populateSalesRepDropdown(data) {
   // Restore selection if possible
   if (reps.includes(currentValue)) {
     salesRepFilter.value = currentValue
+  }
+}
+
+function populateDealStageDropdown(data) {
+  const dealStageFilter = document.getElementById("deal-stage-filter")
+  if (!dealStageFilter) return
+  // Get unique, non-empty dealStage values
+  const stages = Array.from(
+    new Set(
+      data
+        .map((d) => (d.dealStage || "").trim())
+        .filter((v) => v && v.toLowerCase() !== "unknown")
+    )
+  )
+  // Save current selection
+  const currentValue = dealStageFilter.value
+  // Clear and add default option
+  dealStageFilter.innerHTML = '<option value="">All</option>'
+  stages.forEach((stage) => {
+    const option = document.createElement("option")
+    option.value = stage
+    option.textContent = stage
+    dealStageFilter.appendChild(option)
+  })
+  // Restore selection if possible
+  if (stages.includes(currentValue)) {
+    dealStageFilter.value = currentValue
   }
 }
 
@@ -494,6 +522,8 @@ function initializeFilteringAndUpdates() {
   const dealStageFilterEl = document.getElementById("deal-stage-filter")
   const forecastMonthFilterEl = document.getElementById("forecast-month-filter")
   const searchDealFilterEl = document.getElementById("search-deal-filter")
+  const startDateFilterEl = document.getElementById("start-date-filter")
+  const endDateFilterEl = document.getElementById("end-date-filter")
 
   function applyFiltersAndRefreshUI() {
     console.log("script.js: Applying filters to UI...")
@@ -501,8 +531,10 @@ function initializeFilteringAndUpdates() {
     const dealStageFilter = dealStageFilterEl?.value.toLowerCase() || ""
     const forecastMonthFilter = forecastMonthFilterEl?.value || ""
     const searchFilter = searchDealFilterEl?.value.toLowerCase() || ""
+    const startDate = startDateFilterEl?.value
+    const endDate = endDateFilterEl?.value
 
-    const filteredData = allDealsData.filter((deal) => {
+    let filteredData = allDealsData.filter((deal) => {
       const salesRep = (deal.salesRep || "").toLowerCase()
       const dealStage = (deal.dealStage || "").toLowerCase()
       // Use the date string stored in the dataset for filtering comparison
@@ -523,11 +555,45 @@ function initializeFilteringAndUpdates() {
         customerName.includes(searchFilter) ||
         projectName.includes(searchFilter)
 
+      // Date range filtering (Expected Close Date)
+      let dateInRange = true
+      if (startDate || endDate) {
+        let closeDateObj = null
+        if (
+          deal.expectedCloseDate instanceof Date &&
+          !isNaN(deal.expectedCloseDate.getTime())
+        ) {
+          closeDateObj = deal.expectedCloseDate
+        } else if (
+          typeof deal.expectedCloseDate === "string" &&
+          deal.expectedCloseDate.length >= 10
+        ) {
+          closeDateObj = new Date(deal.expectedCloseDate)
+        }
+        if (closeDateObj && !isNaN(closeDateObj.getTime())) {
+          if (startDate) {
+            const start = new Date(startDate)
+            if (closeDateObj < start) dateInRange = false
+          }
+          if (endDate) {
+            const end = new Date(endDate)
+            end.setHours(23, 59, 59, 999)
+            if (closeDateObj > end) dateInRange = false
+          }
+        } else if (startDate || endDate) {
+          dateInRange = false // If no valid date, exclude from range
+        }
+      }
+
       return (
-        salesRepMatch && dealStageMatch && forecastMonthMatch && searchMatch
+        salesRepMatch &&
+        dealStageMatch &&
+        forecastMonthMatch &&
+        searchMatch &&
+        dateInRange
       )
     })
-
+    filteredData = applySort(filteredData)
     console.log(
       `script.js: Filtering complete. Showing ${filteredData.length} of ${allDealsData.length} deals.`
     )
@@ -561,8 +627,63 @@ function initializeFilteringAndUpdates() {
     const eventType = control.tagName === "SELECT" ? "change" : "input"
     control.addEventListener(eventType, applyFiltersAndRefreshUI)
   })
+  // Add sorting event listeners
+  document.querySelectorAll("th.sortable").forEach((th) => {
+    th.style.cursor = "pointer"
+    th.addEventListener("click", () => {
+      const key = th.getAttribute("data-sort")
+      if (currentSort.key === key) {
+        currentSort.direction = currentSort.direction === "asc" ? "desc" : "asc"
+      } else {
+        currentSort.key = key
+        currentSort.direction = "asc"
+      }
+      updateSortIndicators()
+      applyFiltersAndRefreshUI()
+    })
+  })
   console.log("script.js: Applying initial filters...")
   applyFiltersAndRefreshUI() // Apply initial filter state
+}
+
+// --- Sorting State ---
+let currentSort = { key: null, direction: "asc" }
+
+function applySort(data) {
+  if (!currentSort.key) return data
+  const sorted = [...data].sort((a, b) => {
+    let valA = a[currentSort.key]
+    let valB = b[currentSort.key]
+    // Handle dates
+    if (valA instanceof Date && valB instanceof Date) {
+      valA = valA.getTime()
+      valB = valB.getTime()
+    }
+    // Handle numbers
+    if (typeof valA === "number" && typeof valB === "number") {
+      return currentSort.direction === "asc" ? valA - valB : valB - valA
+    }
+    // Fallback to string comparison
+    valA = valA == null ? "" : String(valA).toLowerCase()
+    valB = valB == null ? "" : String(valB).toLowerCase()
+    if (valA < valB) return currentSort.direction === "asc" ? -1 : 1
+    if (valA > valB) return currentSort.direction === "asc" ? 1 : -1
+    return 0
+  })
+  return sorted
+}
+
+function updateSortIndicators() {
+  document.querySelectorAll("th.sortable").forEach((th) => {
+    const indicator = th.querySelector(".sort-indicator")
+    if (!indicator) return
+    const key = th.getAttribute("data-sort")
+    if (key === currentSort.key) {
+      indicator.textContent = currentSort.direction === "asc" ? "▲" : "▼"
+    } else {
+      indicator.textContent = ""
+    }
+  })
 }
 
 // ==================================
@@ -709,31 +830,18 @@ function updateTrend(summaryId, currentValue, previousValue) {
 // CHART UPDATING LOGIC (Unchanged from previous fix)
 // ==================================
 function updateCharts(filteredData) {
-  console.log(
-    `script.js: Updating charts with ${filteredData.length} filtered deals.`
-  )
-  // *** DEBUG: Log the first few items of data received by this function ***
-  console.log(
-    "Data passed to updateCharts (first 5):",
-    JSON.stringify(filteredData.slice(0, 5), null, 2)
-  )
-
-  const formatCurrency = (value) => "฿" + (value || 0).toLocaleString("en-US")
-
   // --- 1. Monthly Forecast Chart Update ---
   if (monthlyForecastChart) {
-    console.log("[Chart Update] Updating Monthly Forecast Chart...")
-    const monthlyForecastTotals = {} // { 'YYYY-MM': totalWeightedValue }
-    const monthlyActualTotals = {} // { 'YYYY-MM': totalValue for Closed Won }
-
-    filteredData.forEach((deal, index) => {
+    // Aggregate forecast and actuals by month
+    const monthlyForecastTotals = {}
+    const monthlyActualTotals = {}
+    filteredData.forEach((deal) => {
       const stageLower = (deal.dealStage || "").toLowerCase()
       const expectedCloseDateInput = deal.expectedCloseDate
-      const actualCloseDateInput = deal.actualCloseDate // Get actual close date
+      const actualCloseDateInput = deal.actualCloseDate
       const weightedVal = deal.weightedValue || 0
-      const totalVal = deal.totalValue || 0 // Use total value for actuals
-
-      // --- Calculate Forecast Totals (Open Deals) ---
+      const totalVal = deal.totalValue || 0
+      // Forecast Totals (Open Deals)
       if (
         expectedCloseDateInput &&
         !stageLower.includes("closed") &&
@@ -744,11 +852,7 @@ function updateCharts(filteredData) {
           expectedCloseDateInput instanceof Date &&
           !isNaN(expectedCloseDateInput.getTime())
         ) {
-          try {
-            monthYear = expectedCloseDateInput.toISOString().substring(0, 7)
-          } catch (e) {
-            /* Handle error */
-          }
+          monthYear = expectedCloseDateInput.toISOString().substring(0, 7)
         } else if (
           typeof expectedCloseDateInput === "string" &&
           expectedCloseDateInput.length >= 7
@@ -760,73 +864,28 @@ function updateCharts(filteredData) {
             (monthlyForecastTotals[monthYear] || 0) + weightedVal
         }
       }
-
-      // --- Calculate Actual Sales Totals (Closed Won Deals) ---
-      // **** ADD MORE DEBUGGING HERE ****
+      // Actual Sales Totals (Closed Won Deals)
       if (stageLower === "closed won") {
-        console.log(
-          `  -> Checking Actuals for Deal [${index}]: Stage='${deal.dealStage}', ActualCloseDate='${actualCloseDateInput}', TotalValue=${totalVal}`
-        )
         if (actualCloseDateInput && totalVal > 0) {
           let monthYear = ""
-          let closeDateStr = "" // For logging
           if (
             actualCloseDateInput instanceof Date &&
             !isNaN(actualCloseDateInput.getTime())
           ) {
-            try {
-              closeDateStr = actualCloseDateInput.toISOString().split("T")[0]
-              monthYear = closeDateStr.substring(0, 7)
-            } catch (e) {
-              console.warn(
-                `[Chart Update] Error formatting ActualCloseDate (Date obj) for deal index ${index}:`,
-                actualCloseDateInput,
-                e
-              )
-            }
+            monthYear = actualCloseDateInput.toISOString().substring(0, 7)
           } else if (
             typeof actualCloseDateInput === "string" &&
             actualCloseDateInput.length >= 7
           ) {
-            closeDateStr = actualCloseDateInput
             monthYear = actualCloseDateInput.substring(0, 7)
-          } else {
-            console.warn(
-              `[Chart Update] Skipping Actuals for deal index ${index} due to unusable date:`,
-              actualCloseDateInput
-            )
           }
-
           if (/^\d{4}-\d{2}$/.test(monthYear)) {
-            console.log(
-              `    --> Adding to Actuals: Month=${monthYear}, Value=${totalVal}`
-            )
             monthlyActualTotals[monthYear] =
               (monthlyActualTotals[monthYear] || 0) + totalVal
-          } else {
-            console.warn(
-              `[Chart Update] Invalid actual close monthYear '${monthYear}' extracted from '${closeDateStr}' for deal index ${index}`
-            )
           }
-        } else {
-          console.log(
-            `    --> Skipped Actuals: Missing ActualCloseDate or TotalValue is zero.`
-          )
         }
       }
-      // **** END ADDED DEBUGGING ****
-    }) // End forEach loop
-
-    // *** DEBUG: Log aggregated totals ***
-    console.log(
-      "[Chart Update] Aggregated Monthly Forecast Totals:",
-      monthlyForecastTotals
-    )
-    console.log(
-      "[Chart Update] Aggregated Monthly Actual Totals:",
-      monthlyActualTotals
-    )
-
+    })
     // Map totals to the specific chart labels
     const monthMap = {
       "Apr-25": "2025-04",
@@ -834,32 +893,20 @@ function updateCharts(filteredData) {
       "Jun-25": "2025-06",
       "Jul-25": "2025-07",
     }
-
     const forecastDataArray = monthlyForecastChart.data.labels.map((label) => {
       const targetMonth = monthMap[label]
       return monthlyForecastTotals[targetMonth] || 0
     })
-
     const actualDataArray = monthlyForecastChart.data.labels.map((label) => {
       const targetMonth = monthMap[label]
-      // Use null for months with no actual data to create gaps in the line
       return monthlyActualTotals[targetMonth] !== undefined
         ? monthlyActualTotals[targetMonth]
         : null
     })
-
-    // *** DEBUG: Log final arrays ***
-    console.log("[Chart Update] Final Forecast Data Array:", forecastDataArray)
-    console.log("[Chart Update] Final Actual Data Array:", actualDataArray)
-
-    // Assign the calculated data to the datasets
-    monthlyForecastChart.data.datasets[0].data = forecastDataArray // Forecast (Bars)
-    monthlyForecastChart.data.datasets[1].data = actualDataArray // Actual Sales (Line)
-
+    monthlyForecastChart.data.datasets[0].data = forecastDataArray
+    monthlyForecastChart.data.datasets[1].data = actualDataArray
     monthlyForecastChart.update()
-    console.log("[Chart Update] Monthly Forecast Chart updated command sent.")
-  } // End if monthlyForecastChart
-
+  }
   // --- 2. Deal Stage Chart Update ---
   if (dealStageChart) {
     const stageCounts = {}
@@ -883,14 +930,12 @@ function updateCharts(filteredData) {
     )
     if (dealStageChart.options.plugins.doughnutlabel) {
       dealStageChart.options.plugins.doughnutlabel.labels[0].text =
-        formatCurrency(pipelineValue).replace("฿", "฿ ")
+        "฿" + (pipelineValue || 0).toLocaleString("en-US")
       dealStageChart.options.plugins.doughnutlabel.labels[1].text =
         "Pipeline Value"
     }
     dealStageChart.update()
-    console.log("[Chart Update] Deal Stage Chart updated.")
   }
-
   // --- 3. Sales Performance Chart Update ---
   if (salesPerformanceChart) {
     const repTotals = {}
@@ -909,6 +954,5 @@ function updateCharts(filteredData) {
       (_, i) => salesRepColors[i % salesRepColors.length]
     )
     salesPerformanceChart.update()
-    console.log("[Chart Update] Sales Performance Chart updated.")
   }
 }
