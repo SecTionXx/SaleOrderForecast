@@ -177,13 +177,36 @@ function initializeCharts() {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          y: { beginAtZero: true, ticks: { callback: shortCurrencyFormatter } },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) =>
+                value.toLocaleString("th-TH", {
+                  style: "currency",
+                  currency: "THB",
+                  maximumFractionDigits: 0,
+                }),
+            },
+          },
         },
         plugins: {
+          datalabels: {
+            formatter: (value) =>
+              value != null ? value.toLocaleString("en-US") : "",
+            color: "#6b7280",
+            font: { weight: "bold" },
+          },
           tooltip: {
             callbacks: {
               label: (ctx) =>
-                `${ctx.dataset.label}: ${currencyFormatter(ctx.parsed.y)}`,
+                `${ctx.dataset.label}: ` +
+                (ctx.parsed.y != null
+                  ? ctx.parsed.y.toLocaleString("th-TH", {
+                      style: "currency",
+                      currency: "THB",
+                      maximumFractionDigits: 0,
+                    })
+                  : ""),
             },
           },
           legend: { position: "top" },
@@ -268,15 +291,38 @@ function initializeCharts() {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: { beginAtZero: true, ticks: { callback: shortCurrencyFormatter } },
+          x: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) =>
+                value.toLocaleString("th-TH", {
+                  style: "currency",
+                  currency: "THB",
+                  maximumFractionDigits: 0,
+                }),
+            },
+          },
           y: { grid: { display: false } },
         },
         plugins: {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: (ctx) => ` ${currencyFormatter(ctx.parsed.x)}`,
+              label: (ctx) =>
+                ctx.parsed.x != null
+                  ? ctx.parsed.x.toLocaleString("th-TH", {
+                      style: "currency",
+                      currency: "THB",
+                      maximumFractionDigits: 0,
+                    })
+                  : "",
             },
+          },
+          datalabels: {
+            formatter: (value) =>
+              value != null ? value.toLocaleString("en-US") : "",
+            color: "#6b7280",
+            font: { weight: "bold" },
           },
         },
       },
