@@ -1,19 +1,22 @@
 // script.js
 
-// --- Import the data fetching function ---
-import { fetchDataFromSheet } from "./data.js"
+// Import enhanced table functionality
+import {
+  initializeRowDetails,
+  initializeRowSelection,
+  initializePagination,
+  getStatusBadgeClass,
+} from "./table.js"
+import { fetchDataFromSheet } from "./dataFetch.js"
+import { initializeCharts, charts, enhancedPalette } from "./chartInit.js" // Add enhancedPalette import
+import { updateCharts } from "./chartUpdate.js"
 
 // --- Global Variables ---
 let allDealsData = [] // Holds the data fetched from the sheet
-let monthlyForecastChart = null
-let dealStageChart = null
-let salesPerformanceChart = null
-let salesFunnelChart = null
-let forecastAccuracyChart = null
-let dealAgingChart = null;
 let currentPage = 1
 const rowsPerPage = 50
 
+// --- Chart Colors ---
 const chartColors = {
   "Proposal Sent": "rgba(59, 130, 246, 0.8)",
   Negotiation: "rgba(245, 158, 11, 0.8)",
@@ -46,7 +49,7 @@ function loadFiltersFromStorage() {
 // --- Main Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
   console.log("script.js: DOM Loaded. Initializing Dashboard...")
-  initializeCharts()
+  initializeCharts(salesRepColors, chartColors) // Ensure charts are initialized first
   fetchDataAndInitializeDashboard()
 })
 
@@ -101,7 +104,7 @@ async function fetchDataAndInitializeDashboard() {
         tableBody.innerHTML =
           '<tr><td colspan="11" class="text-center py-4 text-gray-500">No data available.</td></tr>'
       updateSummaryCards([])
-      updateCharts([])
+      updateCharts([], chartColors, salesRepColors)
     }
   } catch (error) {
     console.error("script.js: Error during data fetching or processing:", error)
@@ -113,7 +116,7 @@ async function fetchDataAndInitializeDashboard() {
       tableBody.innerHTML =
         '<tr><td colspan="11" class="text-center py-4 text-red-600 font-semibold">Failed to load data. Check console and configuration.</td></tr>'
     updateSummaryCards([])
-    updateCharts([])
+    updateCharts([], chartColors, salesRepColors)
   } finally {
     showLoadingIndicator(false)
     console.log("script.js: fetchDataAndInitializeDashboard Finished.")
@@ -176,441 +179,6 @@ function populateDealStageDropdown(data) {
 }
 
 // ==================================
-// CHART INITIALIZATION (Setup Structure - Unchanged from previous fix)
-// ==================================
-function initializeCharts() {
-  console.log("script.js: Initializing chart structures...")
-  Chart.defaults.font.family = "'Inter', 'Sarabun', sans-serif"
-  const currencyFormatter = (value) => "฿" + (value || 0).toLocaleString()
-  const shortCurrencyFormatter = (value) => {
-    value = value || 0
-    if (value >= 1000000) return "฿" + (value / 1000000).toFixed(1) + "M"
-    if (value >= 1000) return "฿" + (value / 1000).toFixed(0) + "K"
-    return "฿" + value.toLocaleString()
-  }
-
-  // --- Monthly Forecast Chart ---
-  const monthlyCtx = document.getElementById("monthlyForecastChart")
-  if (monthlyCtx && !monthlyForecastChart) {
-    const months = ["Apr-25", "May-25", "Jun-25", "Jul-25"]
-    const staticActuals = [350000, 750000, null, null]
-    monthlyForecastChart = new Chart(monthlyCtx.getContext("2d"), {
-      type: "bar",
-      data: {
-        labels: months,
-        datasets: [
-          {
-            label: "Forecast (ถ่วงน้ำหนัก)",
-            data: [0, 0, 0, 0],
-            backgroundColor: "rgba(59, 130, 246, 0.7)",
-            borderColor: "rgba(59, 130, 246, 1)",
-            borderWidth: 1,
-            order: 2,
-          },
-          {
-            label: "Actual Sales",
-            data: staticActuals,
-            type: "line",
-            borderColor: "rgba(22, 163, 74, 1)",
-            backgroundColor: "rgba(22, 163, 74, 0.2)",
-            tension: 0.1,
-            fill: false,
-            order: 1,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: (value) =>
-                value.toLocaleString("th-TH", {
-                  style: "currency",
-                  currency: "THB",
-                  maximumFractionDigits: 0,
-                }),
-            },
-          },
-        },
-        plugins: {
-          datalabels: {
-            formatter: (value) =>
-              value != null ? value.toLocaleString("en-US") : "",
-            color: "#6b7280",
-            font: { weight: "bold" },
-          },
-          tooltip: {
-            callbacks: {
-              label: (ctx) =>
-                `${ctx.dataset.label}: ` +
-                (ctx.parsed.y != null
-                  ? ctx.parsed.y.toLocaleString("th-TH", {
-                      style: "currency",
-                      currency: "THB",
-                      maximumFractionDigits: 0,
-                    })
-                  : ""),
-            },
-          },
-          legend: { position: "top" },
-        },
-        interaction: { mode: "index", intersect: false },
-      },
-    })
-  }
-  // --- Deal Stage Chart ---
-  const stageCtx = document.getElementById("dealStageChart")
-  if (stageCtx && !dealStageChart) {
-    dealStageChart = new Chart(stageCtx.getContext("2d"), {
-      type: "doughnut",
-      data: {
-        labels: [],
-        datasets: [
-          {
-            label: "จำนวนดีล",
-            data: [],
-            backgroundColor: [],
-            borderColor: "#ffffff",
-            borderWidth: 2,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: "60%",
-        plugins: {
-          legend: { position: "bottom", labels: { padding: 15 } },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `${ctx.label || ""}: ${ctx.parsed || 0} Deals`,
-            },
-          },
-          doughnutlabel: {
-            labels: [
-              {
-                text: "฿0",
-                font: { size: "20", weight: "bold" },
-                color: "#1f2937",
-              },
-              {
-                text: "Pipeline Value",
-                font: { size: "12" },
-                color: "#6b7280",
-              },
-            ],
-          },
-          datalabels: {
-            formatter: (val, ctx) => {
-              let sum = ctx.dataset.data.reduce((a, b) => a + b, 0)
-              let pct = sum > 0 ? (val * 100) / sum : 0
-              return pct > 5 ? pct.toFixed(0) + "%" : ""
-            },
-            color: "#fff",
-            font: { weight: "bold" },
-          },
-        },
-      },
-    })
-  }
-  // --- Sales Performance Chart ---
-  const performanceCtx = document.getElementById("salesPerformanceChart")
-  if (performanceCtx && !salesPerformanceChart) {
-    salesPerformanceChart = new Chart(performanceCtx.getContext("2d"), {
-      type: "bar",
-      data: {
-        labels: [],
-        datasets: [
-          {
-            label: "มูลค่าถ่วงน้ำหนัก (บาท)",
-            data: [],
-            backgroundColor: salesRepColors,
-            borderWidth: 1,
-          },
-        ],
-      },
-      options: {
-        indexAxis: "y",
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            beginAtZero: true,
-            ticks: {
-              callback: (value) =>
-                value.toLocaleString("th-TH", {
-                  style: "currency",
-                  currency: "THB",
-                  maximumFractionDigits: 0,
-                }),
-            },
-          },
-          y: { grid: { display: false } },
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) =>
-                ctx.parsed.x != null
-                  ? ctx.parsed.x.toLocaleString("th-TH", {
-                      style: "currency",
-                      currency: "THB",
-                      maximumFractionDigits: 0,
-                    })
-                  : "",
-            },
-          },
-          datalabels: {
-            formatter: (value) =>
-              value != null ? value.toLocaleString("en-US") : "",
-            color: "#6b7280",
-            font: { weight: "bold" },
-          },
-        },
-      },
-    })
-  }
-  // --- Sales Funnel Chart ---
-  const funnelCtx = document.getElementById("salesFunnelChart")
-  if (funnelCtx && !salesFunnelChart) {
-    salesFunnelChart = new Chart(funnelCtx.getContext("2d"), {
-      type: "bar",
-      data: {
-        labels: [],
-        datasets: [
-          {
-            label: "Weighted Value (฿)",
-            data: [],
-            backgroundColor: [
-              "#3b82f6", // Proposal Sent
-              "#f59e0b", // Negotiation
-              "#eab308", // Verbal Agreement
-              "#22c55e", // Closed Won
-              "#ef4444", // Closed Lost
-              "#6b7280", // Other
-            ],
-            borderWidth: 1,
-            yAxisID: "y",
-          },
-          {
-            label: "Deal Count",
-            data: [],
-            backgroundColor: "rgba(107, 114, 128, 0.3)",
-            borderWidth: 1,
-            yAxisID: "yCount",
-            type: "bar",
-          },
-        ],
-      },
-      options: {
-        indexAxis: "y",
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: true },
-          datalabels: {
-            anchor: "end",
-            align: "right",
-            color: "#374151",
-            font: { weight: "bold" },
-            formatter: (value, ctx) => {
-              if (ctx.datasetIndex === 0) {
-                return `฿${value.toLocaleString("en-US", {
-                  maximumFractionDigits: 0,
-                })}`
-              } else {
-                return value
-              }
-            },
-          },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                if (ctx.datasetIndex === 0) {
-                  return `${ctx.label}: ฿${ctx.parsed.x.toLocaleString(
-                    "en-US",
-                    { maximumFractionDigits: 0 }
-                  )}`
-                } else {
-                  return `${ctx.label}: ${ctx.parsed.x} deals`
-                }
-              },
-            },
-          },
-        },
-        scales: {
-          y: { title: { display: false } },
-          x: {
-            beginAtZero: true,
-            title: { display: true, text: "Weighted Value (฿)" },
-          },
-          yCount: {
-            position: "right",
-            grid: { drawOnChartArea: false },
-            title: { display: true, text: "Deal Count" },
-            ticks: { stepSize: 1 },
-            display: false, // Hide by default, can be toggled
-          },
-        },
-      },
-    })
-  }
-  // --- Forecast Accuracy Chart ---
-  const accuracyCtx = document.getElementById("forecastAccuracyChart")
-  if (accuracyCtx && !forecastAccuracyChart) {
-    forecastAccuracyChart = new Chart(accuracyCtx.getContext("2d"), {
-      type: "bar",
-      data: {
-        labels: [],
-        datasets: [
-          {
-            label: "Forecasted (Weighted)",
-            data: [],
-            backgroundColor: "#3b82f6",
-            borderWidth: 1,
-          },
-          {
-            label: "Actual Closed (Total)",
-            data: [],
-            backgroundColor: "#22c55e",
-            borderWidth: 1,
-          },
-          {
-            label: "Accuracy (%)",
-            data: [],
-            type: "line",
-            borderColor: "#f59e0b",
-            backgroundColor: "#f59e0b33",
-            yAxisID: "y1",
-            fill: false,
-            order: 2,
-            pointStyle: "circle",
-            pointRadius: 5,
-            pointBackgroundColor: "#f59e0b",
-            datalabels: {
-              align: "top",
-              anchor: "end",
-              color: "#f59e0b",
-              font: { weight: "bold" },
-              formatter: (value) =>
-                value !== null ? value.toFixed(0) + "%" : "",
-            },
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: "top" },
-          datalabels: {
-            display: (ctx) => ctx.datasetIndex !== 2,
-            color: "#374151",
-            font: { weight: "bold" },
-            formatter: (value, ctx) =>
-              ctx.datasetIndex === 2
-                ? ""
-                : "฿" +
-                  value.toLocaleString("en-US", { maximumFractionDigits: 0 }),
-          },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                if (ctx.datasetIndex === 2) {
-                  return `Accuracy: ${ctx.parsed.y.toFixed(0)}%`
-                } else {
-                  return `${ctx.dataset.label}: ฿${ctx.parsed.y.toLocaleString(
-                    "en-US",
-                    { maximumFractionDigits: 0 }
-                  )}`
-                }
-              },
-            },
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: { display: true, text: "Value (฿)" },
-            ticks: {
-              callback: (value) =>
-                "฿" +
-                value.toLocaleString("en-US", { maximumFractionDigits: 0 }),
-            },
-          },
-          y1: {
-            position: "right",
-            beginAtZero: true,
-            min: 0,
-            max: 150,
-            title: { display: true, text: "Accuracy (%)" },
-            grid: { drawOnChartArea: false },
-            ticks: {
-              callback: (value) => value + "%",
-            },
-          },
-        },
-      },
-    })
-  }
-  // --- Deal Aging Chart ---
-  const agingCtx = document.getElementById("dealAgingChart");
-  if (agingCtx && !dealAgingChart) {
-    dealAgingChart = new Chart(agingCtx.getContext("2d"), {
-      type: "bar",
-      data: {
-        labels: [],
-        datasets: [
-          {
-            label: "<30 days",
-            data: [],
-            backgroundColor: "#60a5fa",
-            stack: 'age',
-          },
-          {
-            label: "30-60 days",
-            data: [],
-            backgroundColor: "#fbbf24",
-            stack: 'age',
-          },
-          {
-            label: ">60 days",
-            data: [],
-            backgroundColor: "#ef4444",
-            stack: 'age',
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: "top" },
-          datalabels: {
-            color: '#374151',
-            font: { weight: 'bold' },
-            formatter: (value) => value > 0 ? value : '',
-          },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} deals`,
-            },
-          },
-        },
-        scales: {
-          x: { stacked: true, title: { display: true, text: 'Deal Stage' } },
-          y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Deal Count' } },
-        },
-      },
-    });
-  }
-}
-
-// ==================================
 // TABLE POPULATION (UI Logic - Updated formatDate)
 // ==================================
 function populateTable(data) {
@@ -628,36 +196,53 @@ function populateTable(data) {
   if (data.length === 0) {
     tableBody.innerHTML =
       '<tr><td colspan="11" class="text-center py-4 text-gray-500">No matching data found for current filters.</td></tr>'
+    // Initialize pagination with 0 items
+    initializePagination(0, rowsPerPage)
     return
   }
 
-  data.forEach((deal, index) => {
+  // Calculate pagination
+  const totalPages = Math.ceil(data.length / rowsPerPage)
+  const startIndex = (currentPage - 1) * rowsPerPage
+  const endIndex = Math.min(startIndex + rowsPerPage, data.length)
+
+  // Initialize or update pagination controls
+  initializePagination(data.length, rowsPerPage)
+
+  // Only process items for the current page
+  const currentPageData = data.slice(startIndex, endIndex)
+
+  currentPageData.forEach((deal, index) => {
     try {
       const row = document.createElement("tr")
-      // Add data-* attributes
+
+      // Add data attributes for filtering and row details
       row.dataset.salesRep = deal.salesRep || ""
       row.dataset.dealStage = deal.dealStage || ""
-      // Store date as ISO string if it's a Date object, otherwise store original string/null
+      row.dataset.dealId = deal.dealId || `DEAL-${index}`
+
+      // Store dates in dataset for details expansion
       row.dataset.closeDate =
         deal.expectedCloseDate instanceof Date
           ? deal.expectedCloseDate.toISOString().split("T")[0]
           : deal.expectedCloseDate || ""
+      row.dataset.dateCreated =
+        deal.dateCreated instanceof Date
+          ? deal.dateCreated.toISOString().split("T")[0]
+          : deal.dateCreated || ""
+      row.dataset.lastUpdated =
+        deal.lastUpdated instanceof Date
+          ? deal.lastUpdated.toISOString().split("T")[0]
+          : deal.lastUpdated || ""
+      row.dataset.notes = deal.notes || ""
+
+      // Store values in dataset for conditional formatting
       row.dataset.value = deal.totalValue || "0"
       row.dataset.weightedValue = deal.weightedValue || "0"
+      row.dataset.probabilityPercent = deal.probabilityPercent || "0"
 
-      // Determine stage badge class
-      let stageClass = "bg-gray-100 text-gray-800" // Default fallback
-      const stageLower = (deal.dealStage || "").toLowerCase()
-      if (stageLower === "proposal sent")
-        stageClass = "bg-blue-100 text-blue-800"
-      else if (stageLower.includes("negotiation"))
-        stageClass = "bg-yellow-100 text-yellow-800"
-      else if (stageLower === "verbal agreement")
-        stageClass = "bg-yellow-100 text-yellow-800"
-      else if (stageLower === "closed won")
-        stageClass = "bg-green-100 text-green-800"
-      else if (stageLower === "closed lost")
-        stageClass = "bg-red-100 text-red-800"
+      // Get enhanced status badge class from table.js
+      const stageBadgeClass = getStatusBadgeClass(deal.dealStage)
 
       // Format values for display
       const formatCurrency = (value) =>
@@ -671,36 +256,29 @@ function populateTable(data) {
       const displayWeightedValue = formatCurrency(deal.weightedValue)
       const displayProb = (deal.probabilityPercent || 0).toFixed(0) + "%"
 
-      // --- **Updated Date Formatting Helper** ---
+      // Format dates
       const formatDate = (dateInput) => {
-        if (!dateInput) return "N/A" // Handle null/undefined/empty string
+        if (!dateInput) return "N/A"
 
         let date
         if (dateInput instanceof Date && !isNaN(dateInput.getTime())) {
-          // If it's already a valid Date object (likely from serial number conversion)
           date = dateInput
         } else if (typeof dateInput === "string") {
-          // Try to parse common string formats (YYYY-MM-DD is most likely from sheets)
-          // Add T00:00:00 to help parser interpret as local time start
           const parsedDate = new Date(
             dateInput + (dateInput.includes("T") ? "" : "T00:00:00")
           )
           if (!isNaN(parsedDate.getTime())) {
-            date = parsedDate // Use parsed date if valid
+            date = parsedDate
           } else {
-            // console.warn(`formatDate: Could not parse date string: ${dateInput}`);
-            return dateInput // Return original string if parsing fails
+            return dateInput
           }
         } else {
-          // If it's neither a parsable string nor a Date object
-          // console.warn(`formatDate: Unexpected date input type: ${typeof dateInput}`, dateInput);
-          return String(dateInput) // Return string representation
+          return String(dateInput)
         }
 
-        // Format the valid Date object to DD/MM/YY
         try {
           const day = String(date.getDate()).padStart(2, "0")
-          const month = String(date.getMonth() + 1).padStart(2, "0") // Month is 0-indexed
+          const month = String(date.getMonth() + 1).padStart(2, "0")
           const year = String(date.getFullYear()).slice(-2)
           return `${day}/${month}/${year}`
         } catch (formatError) {
@@ -709,52 +287,102 @@ function populateTable(data) {
             date,
             formatError
           )
-          return "Invalid Date" // Fallback if formatting fails
+          return "Invalid Date"
         }
       }
-      // --- End Updated Date Formatting Helper ---
 
       const displayCloseDate = formatDate(deal.expectedCloseDate)
       const displayLastUpdated = formatDate(deal.lastUpdated)
+      const displayDateCreated = formatDate(deal.dateCreated)
 
       // Calculate age in days
-      let ageDays = null;
+      let ageDays = null
       if (deal.dateCreated) {
-        let createdDate;
-        if (deal.dateCreated instanceof Date && !isNaN(deal.dateCreated.getTime())) {
-          createdDate = deal.dateCreated;
+        let createdDate
+        if (
+          deal.dateCreated instanceof Date &&
+          !isNaN(deal.dateCreated.getTime())
+        ) {
+          createdDate = deal.dateCreated
         } else if (typeof deal.dateCreated === "string") {
-          createdDate = new Date(deal.dateCreated);
+          createdDate = new Date(deal.dateCreated)
         }
         if (createdDate && !isNaN(createdDate.getTime())) {
-          const today = new Date("2025-04-28"); // Use current date context
-          today.setHours(0,0,0,0);
-          ageDays = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+          const today = new Date("2025-04-28") // Use current date context
+          today.setHours(0, 0, 0, 0)
+          ageDays = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24))
         }
       }
-      deal.ageDays = ageDays;
+      deal.ageDays = ageDays
 
-      // Highlight stale deals: Negotiation > 30 days
-      let staleClass = "";
-      if ((deal.dealStage || "").toLowerCase().includes("negotiation") && ageDays > 30) {
-        staleClass = "stale-deal";
+      // Add classes for row styling based on deal properties
+      if (
+        (deal.dealStage || "").toLowerCase().includes("negotiation") &&
+        ageDays > 30
+      ) {
+        row.classList.add("stale-deal")
       }
+
+      if (deal.weightedValue >= 1000000) {
+        row.classList.add("high-priority-deal")
+      }
+
+      // Check for past due deals
+      let pastDueClass = ""
+      if (row.dataset.closeDate) {
+        try {
+          const closeDate = new Date(row.dataset.closeDate + "T00:00:00")
+          const today = new Date("2025-04-28")
+          today.setHours(0, 0, 0, 0)
+          if (
+            !isNaN(closeDate.getTime()) &&
+            closeDate < today &&
+            !(deal.dealStage || "").toLowerCase().includes("closed")
+          ) {
+            pastDueClass = "past-due-deal"
+          }
+        } catch (e) {
+          console.warn(
+            "Could not parse date for past-due check:",
+            row.dataset.closeDate,
+            e
+          )
+        }
+      }
+
+      // Create row HTML with enhanced styling
       row.innerHTML = `
-                <td class="td-style customer-name">${deal.customerName || "N/A"}</td>
-                <td class="td-style project-name">${deal.projectName || "N/A"}</td>
-                <td class="td-style text-right">${displayTotalValue}</td>
-                <td class="td-style text-center">${displayProb}</td>
-                <td class="td-style font-medium text-right weighted-value-cell">${displayWeightedValue}</td>
-                <td class="td-style deal-stage-cell"><span class="status-badge ${stageClass}">${deal.dealStage || "Unknown"}</span></td>
-                <td class="td-style text-center close-date-cell">${displayCloseDate}</td>
-                <td class="td-style sales-rep-cell">${deal.salesRep || "Unknown"}</td>
-                <td class="td-style text-center">${displayLastUpdated}</td>
-                <td class="td-style text-center ${staleClass}">${ageDays != null ? ageDays : "-"}</td>
-                <td class="td-style text-center action-cell">
-                    <button class="action-button" title="Edit (Not Implemented)"><span data-feather="edit-2"></span></button>
-                    <button class="action-button ml-2" title="Comment (Not Implemented)"><span data-feather="message-square"></span></button>
-                </td>
-            `
+          <td class="td-style customer-name">${deal.customerName || "N/A"}</td>
+          <td class="td-style project-name">
+            ${deal.projectName || "N/A"}
+            ${
+              deal.notes
+                ? `<span class="notes-preview ml-1" title="${
+                    deal.notes
+                  }">(${deal.notes.substring(0, 20)}${
+                    deal.notes.length > 20 ? "..." : ""
+                  })</span>`
+                : ""
+            }
+          </td>
+          <td class="td-style text-right">${displayTotalValue}</td>
+          <td class="td-style text-center">${displayProb}</td>
+          <td class="td-style font-medium text-right weighted-value-cell">${displayWeightedValue}</td>
+          <td class="td-style deal-stage-cell"><span class="${stageBadgeClass}">${
+        deal.dealStage || "Unknown"
+      }</span></td>
+          <td class="td-style text-center close-date-cell ${pastDueClass}">${displayCloseDate}</td>
+          <td class="td-style sales-rep-cell">${deal.salesRep || "Unknown"}</td>
+          <td class="td-style text-center">${displayLastUpdated}</td>
+          <td class="td-style text-center ${
+            ageDays > 45 ? "stale-deal" : ""
+          }">${ageDays != null ? ageDays : "-"}</td>
+          <td class="td-style text-center action-cell">
+              <button class="action-button action-button-view" title="View Details"><span data-feather="eye"></span></button>
+              <button class="action-button" title="Edit (Not Implemented)"><span data-feather="edit-2"></span></button>
+              <button class="action-button" title="Comment (Not Implemented)"><span data-feather="message-square"></span></button>
+          </td>
+      `
       tableBody.appendChild(row)
     } catch (error) {
       console.error(
@@ -764,10 +392,16 @@ function populateTable(data) {
       )
     }
   })
+
+  // Initialize row details and selection after populating table
+  initializeRowDetails()
+  initializeRowSelection()
+
   // After table is populated, replace feather icons
   if (window.feather && typeof window.feather.replace === "function") {
     window.feather.replace()
   }
+
   console.log("script.js: populateTable Finished.")
 }
 
@@ -867,7 +501,7 @@ function initializeFilteringAndUpdates() {
     populateTable(filteredData) // Re-populate table
     updatePaginationInfo(filteredData.length, allDealsData.length)
     updateSummaryCards(filteredData)
-    updateCharts(filteredData)
+    updateCharts(filteredData, chartColors, salesRepColors)
     const tableRows = Array.from(tableBody.getElementsByTagName("tr"))
     tableRows.forEach((row) => applyRowFormatting(row)) // Apply formatting
     // Refresh Lucide icons if needed after table redraw
@@ -1172,314 +806,13 @@ function updateTrend(summaryId, currentValue, previousValue) {
 }
 
 // ==================================
-// CHART UPDATING LOGIC (Unchanged from previous fix)
-// ==================================
-function updateCharts(filteredData) {
-  // --- 1. Monthly Forecast Chart Update ---
-  if (monthlyForecastChart) {
-    // Aggregate forecast and actuals by month
-    const monthlyForecastTotals = {}
-    const monthlyActualTotals = {}
-    filteredData.forEach((deal) => {
-      const stageLower = (deal.dealStage || "").toLowerCase()
-      const expectedCloseDateInput = deal.expectedCloseDate
-      const actualCloseDateInput = deal.actualCloseDate
-      const weightedVal = deal.weightedValue || 0
-      const totalVal = deal.totalValue || 0
-      // Forecast Totals (Open Deals)
-      if (
-        expectedCloseDateInput &&
-        !stageLower.includes("closed") &&
-        weightedVal > 0
-      ) {
-        let monthYear = ""
-        if (
-          expectedCloseDateInput instanceof Date &&
-          !isNaN(expectedCloseDateInput.getTime())
-        ) {
-          monthYear = expectedCloseDateInput.toISOString().substring(0, 7)
-        } else if (
-          typeof expectedCloseDateInput === "string" &&
-          expectedCloseDateInput.length >= 7
-        ) {
-          monthYear = expectedCloseDateInput.substring(0, 7)
-        }
-        if (/^\d{4}-\d{2}$/.test(monthYear)) {
-          monthlyForecastTotals[monthYear] =
-            (monthlyForecastTotals[monthYear] || 0) + weightedVal
-        }
-      }
-      // Actual Sales Totals (Closed Won Deals)
-      if (stageLower === "closed won") {
-        if (actualCloseDateInput && totalVal > 0) {
-          let monthYear = ""
-          if (
-            actualCloseDateInput instanceof Date &&
-            !isNaN(actualCloseDateInput.getTime())
-          ) {
-            monthYear = actualCloseDateInput.toISOString().substring(0, 7)
-          } else if (
-            typeof actualCloseDateInput === "string" &&
-            actualCloseDateInput.length >= 7
-          ) {
-            monthYear = actualCloseDateInput.substring(0, 7)
-          }
-          if (/^\d{4}-\d{2}$/.test(monthYear)) {
-            monthlyActualTotals[monthYear] =
-              (monthlyActualTotals[monthYear] || 0) + totalVal
-          }
-        }
-      }
-    })
-    // Map totals to the specific chart labels
-    const monthMap = {
-      "Apr-25": "2025-04",
-      "May-25": "2025-05",
-      "Jun-25": "2025-06",
-      "Jul-25": "2025-07",
-    }
-    const forecastDataArray = monthlyForecastChart.data.labels.map((label) => {
-      const targetMonth = monthMap[label]
-      return monthlyForecastTotals[targetMonth] || 0
-    })
-    const actualDataArray = monthlyForecastChart.data.labels.map((label) => {
-      const targetMonth = monthMap[label]
-      return monthlyActualTotals[targetMonth] !== undefined
-        ? monthlyActualTotals[targetMonth]
-        : null
-    })
-    monthlyForecastChart.data.datasets[0].data = forecastDataArray
-    monthlyForecastChart.data.datasets[1].data = actualDataArray
-    monthlyForecastChart.update()
-  }
-  // --- 2. Deal Stage Chart Update ---
-  if (dealStageChart) {
-    const stageCounts = {}
-    let pipelineValue = 0
-    filteredData.forEach((deal) => {
-      const stage = deal.dealStage || "Unknown"
-      stageCounts[stage] = (stageCounts[stage] || 0) + 1
-      if (!(stage || "").toLowerCase().includes("closed")) {
-        pipelineValue += deal.weightedValue || 0
-      }
-    })
-    const sortedStages = Object.keys(stageCounts).sort(
-      (a, b) => stageCounts[b] - stageCounts[a]
-    )
-    dealStageChart.data.labels = sortedStages
-    dealStageChart.data.datasets[0].data = sortedStages.map(
-      (stage) => stageCounts[stage]
-    )
-    dealStageChart.data.datasets[0].backgroundColor = sortedStages.map(
-      (stage) => chartColors[stage] || chartColors.default
-    )
-    if (dealStageChart.options.plugins.doughnutlabel) {
-      dealStageChart.options.plugins.doughnutlabel.labels[0].text =
-        "฿" + (pipelineValue || 0).toLocaleString("en-US")
-      dealStageChart.options.plugins.doughnutlabel.labels[1].text =
-        "Pipeline Value"
-    }
-    dealStageChart.update()
-  }
-  // --- 3. Sales Performance Chart Update ---
-  if (salesPerformanceChart) {
-    const repTotals = {}
-    filteredData.forEach((deal) => {
-      const rep = deal.salesRep || "Unknown"
-      repTotals[rep] = (repTotals[rep] || 0) + (deal.weightedValue || 0)
-    })
-    const sortedReps = Object.keys(repTotals).sort(
-      (a, b) => repTotals[b] - repTotals[a]
-    )
-    salesPerformanceChart.data.labels = sortedReps
-    salesPerformanceChart.data.datasets[0].data = sortedReps.map(
-      (rep) => repTotals[rep]
-    )
-    salesPerformanceChart.data.datasets[0].backgroundColor = sortedReps.map(
-      (_, i) => salesRepColors[i % salesRepColors.length]
-    )
-    salesPerformanceChart.update()
-  }
-  // --- 4. Sales Funnel Chart Update ---
-  if (salesFunnelChart) {
-    const funnelStages = [
-      "Proposal Sent",
-      "Negotiation",
-      "Verbal Agreement",
-      "Closed Won",
-      "Closed Lost",
-    ]
-    const stageCounts = {}
-    const stageValues = {}
-    filteredData.forEach((deal) => {
-      const stage = deal.dealStage || "Other"
-      stageCounts[stage] = (stageCounts[stage] || 0) + 1
-      stageValues[stage] = (stageValues[stage] || 0) + (deal.weightedValue || 0)
-    })
-    const funnelLabels = funnelStages.concat(
-      Object.keys(stageCounts).filter((s) => !funnelStages.includes(s))
-    )
-    const funnelValueData = funnelLabels.map((stage) => stageValues[stage] || 0)
-    const funnelCountData = funnelLabels.map((stage) => stageCounts[stage] || 0)
-    // Calculate conversion rates between stages
-    let conversionRates = []
-    for (let i = 0; i < funnelStages.length - 1; i++) {
-      const from = funnelStages[i]
-      const to = funnelStages[i + 1]
-      const fromVal = stageValues[from] || 0
-      const toVal = stageValues[to] || 0
-      let rate = fromVal > 0 ? (toVal / fromVal) * 100 : 0
-      conversionRates.push(rate)
-    }
-    salesFunnelChart.data.labels = funnelLabels
-    salesFunnelChart.data.datasets[0].data = funnelValueData
-    salesFunnelChart.data.datasets[1].data = funnelCountData
-    salesFunnelChart.options.scales.x.title.text = "Weighted Value (฿)"
-    salesFunnelChart.options.scales.yCount.display = true
-    salesFunnelChart.update()
-  }
-  // --- 5. Forecast Accuracy Chart Update ---
-  if (forecastAccuracyChart) {
-    // Get unique months from both forecasted and actual closed deals
-    const monthSet = new Set()
-    filteredData.forEach((deal) => {
-      // Forecasted: use expectedCloseDate
-      let forecastMonth = null
-      if (
-        deal.expectedCloseDate instanceof Date &&
-        !isNaN(deal.expectedCloseDate.getTime())
-      ) {
-        forecastMonth = deal.expectedCloseDate.toISOString().substring(0, 7)
-      } else if (
-        typeof deal.expectedCloseDate === "string" &&
-        deal.expectedCloseDate.length >= 7
-      ) {
-        forecastMonth = deal.expectedCloseDate.substring(0, 7)
-      }
-      if (forecastMonth) monthSet.add(forecastMonth)
-      // Actual: use actualCloseDate for Closed Won
-      if ((deal.dealStage || "").toLowerCase() === "closed won") {
-        let actualMonth = null
-        if (
-          deal.actualCloseDate instanceof Date &&
-          !isNaN(deal.actualCloseDate.getTime())
-        ) {
-          actualMonth = deal.actualCloseDate.toISOString().substring(0, 7)
-        } else if (
-          typeof deal.actualCloseDate === "string" &&
-          deal.actualCloseDate.length >= 7
-        ) {
-          actualMonth = deal.actualCloseDate.substring(0, 7)
-        }
-        if (actualMonth) monthSet.add(actualMonth)
-      }
-    })
-    // Sort months ascending
-    const months = Array.from(monthSet).sort()
-    // Aggregate forecasted and actuals by month
-    const forecastedByMonth = {}
-    const actualByMonth = {}
-    filteredData.forEach((deal) => {
-      // Forecasted: sum weightedValue for deals expected to close in that month
-      let forecastMonth = null
-      if (
-        deal.expectedCloseDate instanceof Date &&
-        !isNaN(deal.expectedCloseDate.getTime())
-      ) {
-        forecastMonth = deal.expectedCloseDate.toISOString().substring(0, 7)
-      } else if (
-        typeof deal.expectedCloseDate === "string" &&
-        deal.expectedCloseDate.length >= 7
-      ) {
-        forecastMonth = deal.expectedCloseDate.substring(0, 7)
-      }
-      if (forecastMonth) {
-        forecastedByMonth[forecastMonth] =
-          (forecastedByMonth[forecastMonth] || 0) + (deal.weightedValue || 0)
-      }
-      // Actual: sum totalValue for Closed Won deals with actualCloseDate in that month
-      if ((deal.dealStage || "").toLowerCase() === "closed won") {
-        let actualMonth = null
-        if (
-          deal.actualCloseDate instanceof Date &&
-          !isNaN(deal.actualCloseDate.getTime())
-        ) {
-          actualMonth = deal.actualCloseDate.toISOString().substring(0, 7)
-        } else if (
-          typeof deal.actualCloseDate === "string" &&
-          deal.actualCloseDate.length >= 7
-        ) {
-          actualMonth = deal.actualCloseDate.substring(0, 7)
-        }
-        if (actualMonth) {
-          actualByMonth[actualMonth] =
-            (actualByMonth[actualMonth] || 0) + (deal.totalValue || 0)
-        }
-      }
-    })
-    // Prepare data arrays
-    const forecastedArr = months.map((m) => forecastedByMonth[m] || 0)
-    const actualArr = months.map((m) => actualByMonth[m] || 0)
-    const accuracyArr = months.map((m, i) => {
-      const forecast = forecastedArr[i]
-      const actual = actualArr[i]
-      return forecast > 0 ? (actual / forecast) * 100 : null
-    })
-    // Format labels as e.g. "Apr-25"
-    const monthLabels = months.map((m) => {
-      const [y, mo] = m.split("-")
-      const date = new Date(Number(y), Number(mo) - 1, 1)
-      return date.toLocaleString("en-US", { month: "short", year: "2-digit" })
-    })
-    forecastAccuracyChart.data.labels = monthLabels
-    forecastAccuracyChart.data.datasets[0].data = forecastedArr
-    forecastAccuracyChart.data.datasets[1].data = actualArr
-    forecastAccuracyChart.data.datasets[2].data = accuracyArr
-    forecastAccuracyChart.update()
-  }
-  // --- Deal Aging Chart Update ---
-  if (dealAgingChart) {
-    const stages = [
-      "Proposal Sent",
-      "Negotiation",
-      "Verbal Agreement",
-      "Closed Won",
-      "Closed Lost"
-    ];
-    // Prepare buckets for each stage
-    const buckets = {
-      '<30': {}, '30-60': {}, '>60': {}
-    };
-    filteredData.forEach(deal => {
-      const stage = deal.dealStage || 'Other';
-      const age = deal.ageDays;
-      if (age == null) return;
-      let bucket = null;
-      if (age < 30) bucket = '<30';
-      else if (age < 61) bucket = '30-60';
-      else bucket = '>60';
-      buckets[bucket][stage] = (buckets[bucket][stage] || 0) + 1;
-    });
-    const allStages = stages.concat(
-      Object.keys(buckets['<30']).concat(Object.keys(buckets['30-60'])).concat(Object.keys(buckets['>60']))
-        .filter(s => !stages.includes(s))
-    );
-    dealAgingChart.data.labels = allStages;
-    dealAgingChart.data.datasets[0].data = allStages.map(s => buckets['<30'][s] || 0);
-    dealAgingChart.data.datasets[1].data = allStages.map(s => buckets['30-60'][s] || 0);
-    dealAgingChart.data.datasets[2].data = allStages.map(s => buckets['>60'][s] || 0);
-    dealAgingChart.update();
-  }
-}
-
-// ==================================
 // CHART RESIZE HANDLER (NEW)
 // ==================================
-window.addEventListener('resize', () => {
-  if (monthlyForecastChart) monthlyForecastChart.resize();
-  if (dealStageChart) dealStageChart.resize();
-  if (salesPerformanceChart) salesPerformanceChart.resize();
-  if (salesFunnelChart) salesFunnelChart.resize();
-  if (forecastAccuracyChart) forecastAccuracyChart.resize();
-  if (dealAgingChart) dealAgingChart.resize();
-});
+window.addEventListener("resize", () => {
+  if (charts.monthlyForecastChart) charts.monthlyForecastChart.resize()
+  if (charts.dealStageChart) charts.dealStageChart.resize()
+  if (charts.salesPerformanceChart) charts.salesPerformanceChart.resize()
+  if (charts.salesFunnelChart) charts.salesFunnelChart.resize()
+  if (charts.forecastAccuracyChart) charts.forecastAccuracyChart.resize()
+  if (charts.dealAgingChart) charts.dealAgingChart.resize()
+})
