@@ -1,26 +1,32 @@
 // api/getSheetData.js
-// (Assumes placement in `api` folder for platforms like Vercel/Netlify)
+// (Serverless API for Vercel/Netlify)
 
-// Using node-fetch v2 for broader compatibility (CommonJS)
-// npm install node-fetch@2
+// Using node-fetch v2 for compatibility
 const fetch = require("node-fetch")
 
-// Load environment variables locally using dotenv
-// npm install dotenv
-// Run locally with: node -r dotenv/config api/getSheetData.js
+// Load environment variables
 require("dotenv").config()
 
 // --- Environment Variables ---
 const apiKey = process.env.GOOGLE_API_KEY
 const sheetId = process.env.GOOGLE_SHEET_ID
-const sheetName = process.env.SHEET_NAME || "Sheet1" // Default sheet name
-const sheetRange = process.env.SHEET_RANGE || "A2:M" // Default range (adjust as needed)
+const sheetName = process.env.SHEET_NAME || "Sheet1"
+const sheetRange = process.env.SHEET_RANGE || "A2:M"
 
 // --- Serverless Function Handler ---
-// Using module.exports for common compatibility (Vercel, Netlify, etc.)
-// For GCP, you might need to adjust export based on entry point config.
 module.exports = async (req, res) => {
   console.log("Backend: /api/getSheetData invoked...")
+
+  // Debug environment for troubleshooting
+  console.log("Backend: Environment Check:", {
+    nodeEnv: process.env.NODE_ENV,
+    hasApiKey: !!apiKey,
+    hasSheetId: !!sheetId,
+    apiKeyPrefix: apiKey ? apiKey.substring(0, 4) + "..." : "undefined",
+    sheetId: sheetId || "undefined",
+    sheetName,
+    sheetRange,
+  })
 
   // --- Security: Validate Environment Variables ---
   if (!apiKey || !sheetId) {
@@ -32,13 +38,9 @@ module.exports = async (req, res) => {
       .json({ error: "Server configuration error. Please check logs." })
     return
   }
-  // Optional: Log existence confirmation locally but not in production if sensitive
-  // console.log("Backend: Required environment variables loaded.");
 
   // --- CORS Headers ---
-  // In production, replace '*' with your specific frontend domain for security
-  // Example: const allowedOrigin = 'https://your-dashboard.com';
-  const allowedOrigin = "*" // For development or simple cases (less secure)
+  const allowedOrigin = "*" // For development
   res.setHeader("Access-Control-Allow-Origin", allowedOrigin)
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS")
   res.setHeader("Access-Control-Allow-Headers", "Content-Type")
@@ -59,8 +61,7 @@ module.exports = async (req, res) => {
   }
 
   // --- Prepare Google Sheets API Request ---
-  const range = `${sheetName}!${sheetRange}` // e.g., "Sheet1!A2:M"
-  // **Revised URL construction: range is part of the path, no extra encoding needed**
+  const range = `${sheetName}!${sheetRange}`
   const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`
   const params = new URLSearchParams({
     key: apiKey,
@@ -69,12 +70,12 @@ module.exports = async (req, res) => {
   })
   const apiUrl = `${baseUrl}?${params}`
 
-  console.log(`Backend: Fetching from Google Sheets API (Range: ${range})...`)
+  console.log(`Backend: Fetching Google Sheets data from range: ${range}...`)
 
   try {
     // --- Make the API Call ---
     const googleResponse = await fetch(apiUrl)
-    const data = await googleResponse.json() // Try parsing JSON regardless of status
+    const data = await googleResponse.json()
 
     console.log("Backend: Google Sheets API Status:", googleResponse.status)
 
@@ -85,7 +86,7 @@ module.exports = async (req, res) => {
         `Google Sheets API error! Status: ${googleResponse.status}`
       console.error(
         "Backend: Google Sheets API Error Response:",
-        JSON.stringify(data?.error, null, 2)
+        JSON.stringify(data?.error || {}, null, 2)
       )
       res.status(googleResponse.status || 500).json({ error: errorMessage })
       return
@@ -97,12 +98,11 @@ module.exports = async (req, res) => {
         data.values ? data.values.length : 0
       } rows.`
     )
-    // Respond with only the 'values' array, defaulting to empty array if missing
     res.status(200).json({ values: data.values || [] })
   } catch (error) {
     // --- Handle Network or Other Unexpected Errors ---
     console.error(
-      "Backend: Internal Server Error fetching/processing Google Sheet data:",
+      "Backend: Error fetching/processing Google Sheet data:",
       error
     )
     res.status(500).json({ error: `Internal Server Error: ${error.message}` })

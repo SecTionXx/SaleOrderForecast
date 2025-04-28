@@ -1,6 +1,8 @@
 // dataFetch.js
 
-const BACKEND_API_URL = "/api/getSheetData"
+// Flexible API URL that works both locally and in various deployment environments
+const BASE_URL = window.location.origin
+const BACKEND_API_URL = `${BASE_URL}/api/getSheetData`
 
 function serialNumberToDate(serial) {
   if (typeof serial !== "number" || isNaN(serial) || serial <= 0) {
@@ -15,7 +17,27 @@ function serialNumberToDate(serial) {
 async function fetchDataFromSheet() {
   console.log("dataFetch.js: Fetching data from backend API:", BACKEND_API_URL)
   try {
+    // Connect directly to API without fallback
     const response = await fetch(BACKEND_API_URL)
+
+    // Check if response is JSON before parsing
+    const contentType = response.headers.get("content-type")
+    if (!contentType || !contentType.includes("application/json")) {
+      console.error(
+        "dataFetch.js: Backend did not return JSON. Content type:",
+        contentType
+      )
+      // If we get a non-JSON response, try to show a more helpful error
+      const textResponse = await response.text()
+      console.error(
+        "dataFetch.js: Raw response:",
+        textResponse.substring(0, 200) + "..."
+      )
+      throw new Error(
+        "Backend API returned invalid format. Please check API configuration."
+      )
+    }
+
     const data = await response.json()
     console.log("dataFetch.js: Backend Response Status:", response.status)
 
