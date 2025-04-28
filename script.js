@@ -8,6 +8,9 @@ let allDealsData = [] // Holds the data fetched from the sheet
 let monthlyForecastChart = null
 let dealStageChart = null
 let salesPerformanceChart = null
+let salesFunnelChart = null
+let forecastAccuracyChart = null
+let dealAgingChart = null;
 let currentPage = 1
 const rowsPerPage = 50
 
@@ -28,15 +31,15 @@ const salesRepColors = [
 ]
 
 // --- Persistent Filter/Sort State ---
-const FILTERS_KEY = 'orderforecast_filters';
+const FILTERS_KEY = "orderforecast_filters"
 function saveFiltersToStorage(filters) {
-  localStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
+  localStorage.setItem(FILTERS_KEY, JSON.stringify(filters))
 }
 function loadFiltersFromStorage() {
   try {
-    return JSON.parse(localStorage.getItem(FILTERS_KEY)) || {};
+    return JSON.parse(localStorage.getItem(FILTERS_KEY)) || {}
   } catch {
-    return {};
+    return {}
   }
 }
 
@@ -371,6 +374,240 @@ function initializeCharts() {
       },
     })
   }
+  // --- Sales Funnel Chart ---
+  const funnelCtx = document.getElementById("salesFunnelChart")
+  if (funnelCtx && !salesFunnelChart) {
+    salesFunnelChart = new Chart(funnelCtx.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "Weighted Value (฿)",
+            data: [],
+            backgroundColor: [
+              "#3b82f6", // Proposal Sent
+              "#f59e0b", // Negotiation
+              "#eab308", // Verbal Agreement
+              "#22c55e", // Closed Won
+              "#ef4444", // Closed Lost
+              "#6b7280", // Other
+            ],
+            borderWidth: 1,
+            yAxisID: "y",
+          },
+          {
+            label: "Deal Count",
+            data: [],
+            backgroundColor: "rgba(107, 114, 128, 0.3)",
+            borderWidth: 1,
+            yAxisID: "yCount",
+            type: "bar",
+          },
+        ],
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true },
+          datalabels: {
+            anchor: "end",
+            align: "right",
+            color: "#374151",
+            font: { weight: "bold" },
+            formatter: (value, ctx) => {
+              if (ctx.datasetIndex === 0) {
+                return `฿${value.toLocaleString("en-US", {
+                  maximumFractionDigits: 0,
+                })}`
+              } else {
+                return value
+              }
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                if (ctx.datasetIndex === 0) {
+                  return `${ctx.label}: ฿${ctx.parsed.x.toLocaleString(
+                    "en-US",
+                    { maximumFractionDigits: 0 }
+                  )}`
+                } else {
+                  return `${ctx.label}: ${ctx.parsed.x} deals`
+                }
+              },
+            },
+          },
+        },
+        scales: {
+          y: { title: { display: false } },
+          x: {
+            beginAtZero: true,
+            title: { display: true, text: "Weighted Value (฿)" },
+          },
+          yCount: {
+            position: "right",
+            grid: { drawOnChartArea: false },
+            title: { display: true, text: "Deal Count" },
+            ticks: { stepSize: 1 },
+            display: false, // Hide by default, can be toggled
+          },
+        },
+      },
+    })
+  }
+  // --- Forecast Accuracy Chart ---
+  const accuracyCtx = document.getElementById("forecastAccuracyChart")
+  if (accuracyCtx && !forecastAccuracyChart) {
+    forecastAccuracyChart = new Chart(accuracyCtx.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "Forecasted (Weighted)",
+            data: [],
+            backgroundColor: "#3b82f6",
+            borderWidth: 1,
+          },
+          {
+            label: "Actual Closed (Total)",
+            data: [],
+            backgroundColor: "#22c55e",
+            borderWidth: 1,
+          },
+          {
+            label: "Accuracy (%)",
+            data: [],
+            type: "line",
+            borderColor: "#f59e0b",
+            backgroundColor: "#f59e0b33",
+            yAxisID: "y1",
+            fill: false,
+            order: 2,
+            pointStyle: "circle",
+            pointRadius: 5,
+            pointBackgroundColor: "#f59e0b",
+            datalabels: {
+              align: "top",
+              anchor: "end",
+              color: "#f59e0b",
+              font: { weight: "bold" },
+              formatter: (value) =>
+                value !== null ? value.toFixed(0) + "%" : "",
+            },
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "top" },
+          datalabels: {
+            display: (ctx) => ctx.datasetIndex !== 2,
+            color: "#374151",
+            font: { weight: "bold" },
+            formatter: (value, ctx) =>
+              ctx.datasetIndex === 2
+                ? ""
+                : "฿" +
+                  value.toLocaleString("en-US", { maximumFractionDigits: 0 }),
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                if (ctx.datasetIndex === 2) {
+                  return `Accuracy: ${ctx.parsed.y.toFixed(0)}%`
+                } else {
+                  return `${ctx.dataset.label}: ฿${ctx.parsed.y.toLocaleString(
+                    "en-US",
+                    { maximumFractionDigits: 0 }
+                  )}`
+                }
+              },
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: "Value (฿)" },
+            ticks: {
+              callback: (value) =>
+                "฿" +
+                value.toLocaleString("en-US", { maximumFractionDigits: 0 }),
+            },
+          },
+          y1: {
+            position: "right",
+            beginAtZero: true,
+            min: 0,
+            max: 150,
+            title: { display: true, text: "Accuracy (%)" },
+            grid: { drawOnChartArea: false },
+            ticks: {
+              callback: (value) => value + "%",
+            },
+          },
+        },
+      },
+    })
+  }
+  // --- Deal Aging Chart ---
+  const agingCtx = document.getElementById("dealAgingChart");
+  if (agingCtx && !dealAgingChart) {
+    dealAgingChart = new Chart(agingCtx.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "<30 days",
+            data: [],
+            backgroundColor: "#60a5fa",
+            stack: 'age',
+          },
+          {
+            label: "30-60 days",
+            data: [],
+            backgroundColor: "#fbbf24",
+            stack: 'age',
+          },
+          {
+            label: ">60 days",
+            data: [],
+            backgroundColor: "#ef4444",
+            stack: 'age',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "top" },
+          datalabels: {
+            color: '#374151',
+            font: { weight: 'bold' },
+            formatter: (value) => value > 0 ? value : '',
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} deals`,
+            },
+          },
+        },
+        scales: {
+          x: { stacked: true, title: { display: true, text: 'Deal Stage' } },
+          y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Deal Count' } },
+        },
+      },
+    });
+  }
 }
 
 // ==================================
@@ -480,24 +717,39 @@ function populateTable(data) {
       const displayCloseDate = formatDate(deal.expectedCloseDate)
       const displayLastUpdated = formatDate(deal.lastUpdated)
 
+      // Calculate age in days
+      let ageDays = null;
+      if (deal.dateCreated) {
+        let createdDate;
+        if (deal.dateCreated instanceof Date && !isNaN(deal.dateCreated.getTime())) {
+          createdDate = deal.dateCreated;
+        } else if (typeof deal.dateCreated === "string") {
+          createdDate = new Date(deal.dateCreated);
+        }
+        if (createdDate && !isNaN(createdDate.getTime())) {
+          const today = new Date("2025-04-28"); // Use current date context
+          today.setHours(0,0,0,0);
+          ageDays = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+        }
+      }
+      deal.ageDays = ageDays;
+
+      // Highlight stale deals: Negotiation > 30 days
+      let staleClass = "";
+      if ((deal.dealStage || "").toLowerCase().includes("negotiation") && ageDays > 30) {
+        staleClass = "stale-deal";
+      }
       row.innerHTML = `
-                <td class="td-style customer-name">${
-                  deal.customerName || "N/A"
-                }</td>
-                <td class="td-style project-name">${
-                  deal.projectName || "N/A"
-                }</td>
+                <td class="td-style customer-name">${deal.customerName || "N/A"}</td>
+                <td class="td-style project-name">${deal.projectName || "N/A"}</td>
                 <td class="td-style text-right">${displayTotalValue}</td>
                 <td class="td-style text-center">${displayProb}</td>
                 <td class="td-style font-medium text-right weighted-value-cell">${displayWeightedValue}</td>
-                <td class="td-style deal-stage-cell"><span class="status-badge ${stageClass}">${
-        deal.dealStage || "Unknown"
-      }</span></td>
+                <td class="td-style deal-stage-cell"><span class="status-badge ${stageClass}">${deal.dealStage || "Unknown"}</span></td>
                 <td class="td-style text-center close-date-cell">${displayCloseDate}</td>
-                <td class="td-style sales-rep-cell">${
-                  deal.salesRep || "Unknown"
-                }</td>
+                <td class="td-style sales-rep-cell">${deal.salesRep || "Unknown"}</td>
                 <td class="td-style text-center">${displayLastUpdated}</td>
+                <td class="td-style text-center ${staleClass}">${ageDays != null ? ageDays : "-"}</td>
                 <td class="td-style text-center action-cell">
                     <button class="action-button" title="Edit (Not Implemented)"><span data-feather="edit-2"></span></button>
                     <button class="action-button ml-2" title="Comment (Not Implemented)"><span data-feather="message-square"></span></button>
@@ -639,23 +891,28 @@ function initializeFilteringAndUpdates() {
   }
 
   // Restore filters from storage
-  const saved = loadFiltersFromStorage();
+  const saved = loadFiltersFromStorage()
   if (saved) {
-    if (salesRepFilterEl && saved.salesRep) salesRepFilterEl.value = saved.salesRep;
-    if (dealStageFilterEl && saved.dealStage) dealStageFilterEl.value = saved.dealStage;
-    if (forecastMonthFilterEl && saved.forecastMonth) forecastMonthFilterEl.value = saved.forecastMonth;
-    if (searchDealFilterEl && saved.search) searchDealFilterEl.value = saved.search;
-    if (startDateFilterEl && saved.startDate) startDateFilterEl.value = saved.startDate;
-    if (endDateFilterEl && saved.endDate) endDateFilterEl.value = saved.endDate;
-    if (saved.sortKey) currentSort.key = saved.sortKey;
-    if (saved.sortDir) currentSort.direction = saved.sortDir;
-    if (saved.page) currentPage = saved.page;
+    if (salesRepFilterEl && saved.salesRep)
+      salesRepFilterEl.value = saved.salesRep
+    if (dealStageFilterEl && saved.dealStage)
+      dealStageFilterEl.value = saved.dealStage
+    if (forecastMonthFilterEl && saved.forecastMonth)
+      forecastMonthFilterEl.value = saved.forecastMonth
+    if (searchDealFilterEl && saved.search)
+      searchDealFilterEl.value = saved.search
+    if (startDateFilterEl && saved.startDate)
+      startDateFilterEl.value = saved.startDate
+    if (endDateFilterEl && saved.endDate) endDateFilterEl.value = saved.endDate
+    if (saved.sortKey) currentSort.key = saved.sortKey
+    if (saved.sortDir) currentSort.direction = saved.sortDir
+    if (saved.page) currentPage = saved.page
   }
 
   filterControls.forEach((control) => {
     const eventType = control.tagName === "SELECT" ? "change" : "input"
     control.addEventListener(eventType, () => {
-      resetPagination();
+      resetPagination()
       saveFiltersToStorage({
         salesRep: salesRepFilterEl?.value,
         dealStage: dealStageFilterEl?.value,
@@ -665,14 +922,14 @@ function initializeFilteringAndUpdates() {
         endDate: endDateFilterEl?.value,
         sortKey: currentSort.key,
         sortDir: currentSort.direction,
-        page: 1
-      });
-      applyFiltersAndRefreshUI();
+        page: 1,
+      })
+      applyFiltersAndRefreshUI()
     })
   })
   // Save sort state on header click
-  document.querySelectorAll('th.sortable').forEach(th => {
-    th.addEventListener('click', () => {
+  document.querySelectorAll("th.sortable").forEach((th) => {
+    th.addEventListener("click", () => {
       saveFiltersToStorage({
         salesRep: salesRepFilterEl?.value,
         dealStage: dealStageFilterEl?.value,
@@ -682,17 +939,17 @@ function initializeFilteringAndUpdates() {
         endDate: endDateFilterEl?.value,
         sortKey: currentSort.key,
         sortDir: currentSort.direction,
-        page: 1
-      });
-    });
-  });
+        page: 1,
+      })
+    })
+  })
   // --- Pagination Controls ---
   function setupPaginationControls(filteredCount) {
-    const buttons = document.querySelectorAll(".pagination-button");
+    const buttons = document.querySelectorAll(".pagination-button")
     if (buttons.length === 2) {
       buttons[0].onclick = () => {
         if (currentPage > 1) {
-          currentPage--;
+          currentPage--
           saveFiltersToStorage({
             salesRep: salesRepFilterEl?.value,
             dealStage: dealStageFilterEl?.value,
@@ -702,14 +959,14 @@ function initializeFilteringAndUpdates() {
             endDate: endDateFilterEl?.value,
             sortKey: currentSort.key,
             sortDir: currentSort.direction,
-            page: currentPage
-          });
-          applyFiltersAndRefreshUI();
+            page: currentPage,
+          })
+          applyFiltersAndRefreshUI()
         }
-      };
+      }
       buttons[1].onclick = () => {
         if (currentPage * rowsPerPage < filteredCount) {
-          currentPage++;
+          currentPage++
           saveFiltersToStorage({
             salesRep: salesRepFilterEl?.value,
             dealStage: dealStageFilterEl?.value,
@@ -719,11 +976,11 @@ function initializeFilteringAndUpdates() {
             endDate: endDateFilterEl?.value,
             sortKey: currentSort.key,
             sortDir: currentSort.direction,
-            page: currentPage
-          });
-          applyFiltersAndRefreshUI();
+            page: currentPage,
+          })
+          applyFiltersAndRefreshUI()
         }
-      };
+      }
     }
   }
   console.log("script.js: Applying initial filters...")
@@ -731,7 +988,7 @@ function initializeFilteringAndUpdates() {
 }
 
 function resetPagination() {
-  currentPage = 1;
+  currentPage = 1
 }
 
 // --- Sorting State ---
@@ -1043,4 +1300,186 @@ function updateCharts(filteredData) {
     )
     salesPerformanceChart.update()
   }
+  // --- 4. Sales Funnel Chart Update ---
+  if (salesFunnelChart) {
+    const funnelStages = [
+      "Proposal Sent",
+      "Negotiation",
+      "Verbal Agreement",
+      "Closed Won",
+      "Closed Lost",
+    ]
+    const stageCounts = {}
+    const stageValues = {}
+    filteredData.forEach((deal) => {
+      const stage = deal.dealStage || "Other"
+      stageCounts[stage] = (stageCounts[stage] || 0) + 1
+      stageValues[stage] = (stageValues[stage] || 0) + (deal.weightedValue || 0)
+    })
+    const funnelLabels = funnelStages.concat(
+      Object.keys(stageCounts).filter((s) => !funnelStages.includes(s))
+    )
+    const funnelValueData = funnelLabels.map((stage) => stageValues[stage] || 0)
+    const funnelCountData = funnelLabels.map((stage) => stageCounts[stage] || 0)
+    // Calculate conversion rates between stages
+    let conversionRates = []
+    for (let i = 0; i < funnelStages.length - 1; i++) {
+      const from = funnelStages[i]
+      const to = funnelStages[i + 1]
+      const fromVal = stageValues[from] || 0
+      const toVal = stageValues[to] || 0
+      let rate = fromVal > 0 ? (toVal / fromVal) * 100 : 0
+      conversionRates.push(rate)
+    }
+    salesFunnelChart.data.labels = funnelLabels
+    salesFunnelChart.data.datasets[0].data = funnelValueData
+    salesFunnelChart.data.datasets[1].data = funnelCountData
+    salesFunnelChart.options.scales.x.title.text = "Weighted Value (฿)"
+    salesFunnelChart.options.scales.yCount.display = true
+    salesFunnelChart.update()
+  }
+  // --- 5. Forecast Accuracy Chart Update ---
+  if (forecastAccuracyChart) {
+    // Get unique months from both forecasted and actual closed deals
+    const monthSet = new Set()
+    filteredData.forEach((deal) => {
+      // Forecasted: use expectedCloseDate
+      let forecastMonth = null
+      if (
+        deal.expectedCloseDate instanceof Date &&
+        !isNaN(deal.expectedCloseDate.getTime())
+      ) {
+        forecastMonth = deal.expectedCloseDate.toISOString().substring(0, 7)
+      } else if (
+        typeof deal.expectedCloseDate === "string" &&
+        deal.expectedCloseDate.length >= 7
+      ) {
+        forecastMonth = deal.expectedCloseDate.substring(0, 7)
+      }
+      if (forecastMonth) monthSet.add(forecastMonth)
+      // Actual: use actualCloseDate for Closed Won
+      if ((deal.dealStage || "").toLowerCase() === "closed won") {
+        let actualMonth = null
+        if (
+          deal.actualCloseDate instanceof Date &&
+          !isNaN(deal.actualCloseDate.getTime())
+        ) {
+          actualMonth = deal.actualCloseDate.toISOString().substring(0, 7)
+        } else if (
+          typeof deal.actualCloseDate === "string" &&
+          deal.actualCloseDate.length >= 7
+        ) {
+          actualMonth = deal.actualCloseDate.substring(0, 7)
+        }
+        if (actualMonth) monthSet.add(actualMonth)
+      }
+    })
+    // Sort months ascending
+    const months = Array.from(monthSet).sort()
+    // Aggregate forecasted and actuals by month
+    const forecastedByMonth = {}
+    const actualByMonth = {}
+    filteredData.forEach((deal) => {
+      // Forecasted: sum weightedValue for deals expected to close in that month
+      let forecastMonth = null
+      if (
+        deal.expectedCloseDate instanceof Date &&
+        !isNaN(deal.expectedCloseDate.getTime())
+      ) {
+        forecastMonth = deal.expectedCloseDate.toISOString().substring(0, 7)
+      } else if (
+        typeof deal.expectedCloseDate === "string" &&
+        deal.expectedCloseDate.length >= 7
+      ) {
+        forecastMonth = deal.expectedCloseDate.substring(0, 7)
+      }
+      if (forecastMonth) {
+        forecastedByMonth[forecastMonth] =
+          (forecastedByMonth[forecastMonth] || 0) + (deal.weightedValue || 0)
+      }
+      // Actual: sum totalValue for Closed Won deals with actualCloseDate in that month
+      if ((deal.dealStage || "").toLowerCase() === "closed won") {
+        let actualMonth = null
+        if (
+          deal.actualCloseDate instanceof Date &&
+          !isNaN(deal.actualCloseDate.getTime())
+        ) {
+          actualMonth = deal.actualCloseDate.toISOString().substring(0, 7)
+        } else if (
+          typeof deal.actualCloseDate === "string" &&
+          deal.actualCloseDate.length >= 7
+        ) {
+          actualMonth = deal.actualCloseDate.substring(0, 7)
+        }
+        if (actualMonth) {
+          actualByMonth[actualMonth] =
+            (actualByMonth[actualMonth] || 0) + (deal.totalValue || 0)
+        }
+      }
+    })
+    // Prepare data arrays
+    const forecastedArr = months.map((m) => forecastedByMonth[m] || 0)
+    const actualArr = months.map((m) => actualByMonth[m] || 0)
+    const accuracyArr = months.map((m, i) => {
+      const forecast = forecastedArr[i]
+      const actual = actualArr[i]
+      return forecast > 0 ? (actual / forecast) * 100 : null
+    })
+    // Format labels as e.g. "Apr-25"
+    const monthLabels = months.map((m) => {
+      const [y, mo] = m.split("-")
+      const date = new Date(Number(y), Number(mo) - 1, 1)
+      return date.toLocaleString("en-US", { month: "short", year: "2-digit" })
+    })
+    forecastAccuracyChart.data.labels = monthLabels
+    forecastAccuracyChart.data.datasets[0].data = forecastedArr
+    forecastAccuracyChart.data.datasets[1].data = actualArr
+    forecastAccuracyChart.data.datasets[2].data = accuracyArr
+    forecastAccuracyChart.update()
+  }
+  // --- Deal Aging Chart Update ---
+  if (dealAgingChart) {
+    const stages = [
+      "Proposal Sent",
+      "Negotiation",
+      "Verbal Agreement",
+      "Closed Won",
+      "Closed Lost"
+    ];
+    // Prepare buckets for each stage
+    const buckets = {
+      '<30': {}, '30-60': {}, '>60': {}
+    };
+    filteredData.forEach(deal => {
+      const stage = deal.dealStage || 'Other';
+      const age = deal.ageDays;
+      if (age == null) return;
+      let bucket = null;
+      if (age < 30) bucket = '<30';
+      else if (age < 61) bucket = '30-60';
+      else bucket = '>60';
+      buckets[bucket][stage] = (buckets[bucket][stage] || 0) + 1;
+    });
+    const allStages = stages.concat(
+      Object.keys(buckets['<30']).concat(Object.keys(buckets['30-60'])).concat(Object.keys(buckets['>60']))
+        .filter(s => !stages.includes(s))
+    );
+    dealAgingChart.data.labels = allStages;
+    dealAgingChart.data.datasets[0].data = allStages.map(s => buckets['<30'][s] || 0);
+    dealAgingChart.data.datasets[1].data = allStages.map(s => buckets['30-60'][s] || 0);
+    dealAgingChart.data.datasets[2].data = allStages.map(s => buckets['>60'][s] || 0);
+    dealAgingChart.update();
+  }
 }
+
+// ==================================
+// CHART RESIZE HANDLER (NEW)
+// ==================================
+window.addEventListener('resize', () => {
+  if (monthlyForecastChart) monthlyForecastChart.resize();
+  if (dealStageChart) dealStageChart.resize();
+  if (salesPerformanceChart) salesPerformanceChart.resize();
+  if (salesFunnelChart) salesFunnelChart.resize();
+  if (forecastAccuracyChart) forecastAccuracyChart.resize();
+  if (dealAgingChart) dealAgingChart.resize();
+});

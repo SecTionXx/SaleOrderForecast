@@ -347,6 +347,26 @@
           <canvas id="salesPerformanceChart"></canvas>
         </div>
       </div>
+      <div class="chart-container md:col-span-2">
+        <h3 class="chart-title">Sales Funnel (Deal Count by Stage)</h3>
+        <div class="h-72">
+          <canvas id="salesFunnelChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-container md:col-span-2">
+        <h3 class="chart-title">
+          Forecast Accuracy (Weighted vs. Actual Closed)
+        </h3>
+        <div class="h-72">
+          <canvas id="forecastAccuracyChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-container md:col-span-2">
+        <h3 class="chart-title">Deal Aging by Stage (Count by Age Bucket)</h3>
+        <div class="h-72">
+          <canvas id="dealAgingChart"></canvas>
+        </div>
+      </div>
     </section>
 
     <!-- Table Section -->
@@ -408,6 +428,13 @@
                 data-sort="lastUpdated"
               >
                 Last Updated <span class="sort-indicator"></span>
+              </th>
+              <th
+                scope="col"
+                class="th-style text-center sortable"
+                data-sort="ageDays"
+              >
+                Age (Days) <span class="sort-indicator"></span>
               </th>
               <th scope="col" class="th-style text-center">Actions</th>
             </tr>
