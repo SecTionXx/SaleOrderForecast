@@ -1,0 +1,192 @@
+/* Apply base font families */
+body {
+  font-family: "Inter", "Sarabun", sans-serif;
+}
+
+/* Sticky table header */
+th.th-style {
+  /* Target specific class */
+  position: sticky;
+  top: 0;
+  background-color: #f3f4f6; /* Tailwind gray-100 */
+  z-index: 10; /* Ensure header stays above scrolling content */
+  padding: 0.75rem 1rem; /* px-4 py-3 */
+  text-align: left;
+  font-size: 0.75rem; /* text-xs */
+  font-weight: 500; /* font-medium */
+  color: #6b7280; /* text-gray-500 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em; /* tracking-wider */
+  white-space: nowrap;
+}
+th.th-style.text-right {
+  text-align: right;
+}
+th.th-style.text-center {
+  text-align: center;
+}
+
+/* Style for Lucide icons */
+[data-lucide] {
+  vertical-align: middle;
+  display: inline-block; /* Ensures proper alignment and sizing */
+}
+
+/* Custom class for hiding table rows via JavaScript */
+.hidden-row {
+  display: none;
+}
+
+/* Summary Card Base Styles */
+.summary-card {
+  padding: 1rem; /* p-4 */
+  border-radius: 0.5rem; /* rounded-lg */
+  border: 1px solid;
+  /* Specific border colors are handled by Tailwind classes like border-blue-200 */
+}
+.summary-card .trend-icon {
+  /* Default state for trend icon */
+  color: #6b7280; /* gray-500 */
+}
+.summary-card .trend-up {
+  color: #16a34a; /* green-600 */
+}
+.summary-card .trend-down {
+  color: #dc2626; /* red-600 */
+}
+
+/* Chart Container Styles */
+.chart-container {
+  background-color: white;
+  padding: 1rem; /* p-4 */
+  border-radius: 0.5rem; /* rounded-lg */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow */
+  border: 1px solid #e5e7eb; /* border */
+}
+.chart-title {
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 600; /* font-semibold */
+  color: #4b5563; /* text-gray-700 */
+  margin-bottom: 0.75rem; /* mb-3 */
+}
+
+/* Table Data Cell Styles */
+.td-style {
+  padding: 0.75rem 1rem; /* px-4 py-3 */
+  white-space: nowrap;
+  font-size: 0.875rem; /* text-sm */
+  vertical-align: middle; /* Align content vertically */
+  color: #374151; /* Default text color (gray-700) */
+}
+.td-style.customer-name {
+  color: #111827; /* text-gray-900 */
+}
+.td-style.project-name {
+  color: #6b7280; /* text-gray-500 */
+}
+.td-style.weighted-value-cell {
+  color: #111827; /* text-gray-900 */
+  font-weight: 500; /* font-medium */
+}
+.td-style.deal-stage-cell {
+  /* Container for badge */
+}
+.td-style.close-date-cell {
+  color: #6b7280; /* text-gray-500 */
+}
+.td-style.sales-rep-cell {
+  color: #6b7280; /* text-gray-500 */
+}
+.td-style.action-cell {
+}
+.td-style.text-right {
+  text-align: right;
+}
+.td-style.text-center {
+  text-align: center;
+}
+
+/* Status Badge */
+.status-badge {
+  padding: 0.125rem 0.625rem; /* py-0.5 px-2.5 */
+  display: inline-flex;
+  font-size: 0.75rem; /* text-xs */
+  line-height: 1.25rem; /* leading-5 */
+  font-weight: 500; /* font-medium */
+  border-radius: 9999px; /* rounded-full */
+  white-space: nowrap;
+}
+
+/* Action Buttons in Table */
+.action-button {
+  color: #4f46e5; /* text-indigo-600 */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.action-button:hover {
+  color: #3730a3; /* hover:text-indigo-900 */
+}
+.action-button i[data-lucide="message-square"] {
+  /* Specific icon color */
+  color: #6b7280; /* text-gray-500 */
+}
+.action-button:hover i[data-lucide="message-square"] {
+  color: #374151; /* hover:text-gray-700 */
+}
+
+/* Pagination Buttons */
+.pagination-buttons {
+  display: inline-flex;
+  border-radius: 0.375rem; /* rounded-md */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+}
+.pagination-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem; /* px-2 py-2 */
+  border: 1px solid #d1d5db; /* border-gray-300 */
+  background-color: white;
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  color: #6b7280; /* text-gray-500 */
+  cursor: pointer;
+}
+.pagination-button:first-child {
+  border-top-left-radius: 0.375rem; /* rounded-l-md */
+  border-bottom-left-radius: 0.375rem;
+}
+.pagination-button:last-child {
+  border-top-right-radius: 0.375rem; /* rounded-r-md */
+  border-bottom-right-radius: 0.375rem;
+  margin-left: -1px; /* -space-x-px */
+}
+.pagination-button:hover:not(:disabled) {
+  background-color: #f9fafb; /* hover:bg-gray-50 */
+}
+.pagination-button:focus {
+  z-index: 10;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  /* Add focus ring styles if desired */
+}
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- Conditional Formatting --- */
+td.high-value-deal {
+  /* Applied directly to the TD */
+  /* Example: Highlight high weighted value */
+  background-color: #fef3c7; /* Tailwind yellow-100 slightly darker*/
+  font-weight: 600; /* semibold */
+}
+
+td.past-due-deal {
+  /* Example: Highlight past due dates */
+  color: #dc2626; /* Tailwind red-600 */
+  font-weight: 600; /* semibold */
+}

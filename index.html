@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Forecast Dashboard (Google Sheet)</title>
+
+    <!-- External Libraries & Frameworks -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/@tailwindcss/ui@latest/dist/tailwind-ui.min.css"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Load Chart.js and plugins in correct order -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <!-- Custom Doughnut Label Plugin -->
+    <script>
+      // Define and register the plugin before using it
+      const DoughnutLabel = {
+        id: "doughnutLabel",
+        beforeDraw(chart) {
+          const {
+            ctx,
+            chartArea: { top, right, bottom, left, width, height },
+          } = chart
+          if (chart.config.type !== "doughnut") return
+
+          const centerX = left + width / 2
+          const centerY = top + height / 2
+
+          if (chart.options.plugins.doughnutlabel?.labels) {
+            const labels = chart.options.plugins.doughnutlabel.labels
+            labels.forEach((label, index) => {
+              ctx.save()
+              ctx.textAlign = "center"
+              ctx.textBaseline = "middle"
+              ctx.font = `${label.font?.weight || ""} ${
+                label.font?.size || "12px"
+              } ${label.font?.family || "Arial"}`
+              ctx.fillStyle = label.color || "#000"
+              ctx.fillText(label.text, centerX, centerY + index * 25)
+              ctx.restore()
+            })
+          }
+        },
+      }
+
+      // Register plugins globally
+      Chart.register(ChartDataLabels)
+      Chart.register(DoughnutLabel)
+    </script>
+
+    <!-- Link to External CSS -->
+    <link rel="stylesheet" href="style.css" />
+    <!-- ADD Feather Icons CDN before any script that uses feather.replace() -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  </head>
+  <body class="bg-gray-100 p-4 md:p-8">
+    <!-- Loading Indicator -->
+    <div
+      id="loading-overlay"
+      style="display: flex; position: fixed; inset: 0; background-color: rgba(255, 255, 255, 0.8); z-index: 100; justify-content: center; align-items: center;"
+    >
+      <div class="text-center">
+        <svg
+          class="animate-spin h-8 w-8 text-indigo-600 mx-auto mb-2"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        <p class="text-lg font-medium text-gray-700">Loading Data...</p>
+      </div>
+    </div>
+
+    <!-- Error Message Area -->
+    <div
+      id="error-message-area"
+      style="display: none; background-color: #fee2e2; color: #dc2626; padding: 1rem; margin-bottom: 1.5rem; border: 1px solid #fecaca; border-radius: 0.375rem;"
+    >
+      <!-- Error message will be inserted here -->
+    </div>
+
+    <div class="max-w-7xl mx-auto bg-white rounded-lg shadow-md p-6"></div>
+      <header class="mb-6 border-b pb-4">
+        <h1 class="text-2xl md:text-3xl font-semibold text-gray-800">
+          Order Forecast Dashboard
+        </h1>
+        <p class="text-gray-500">Data from Google Sheet</p>
+      </header>
+
+      <!-- Filters Section -->
+      <section
+        class="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"
+      >
+        <div>
+          <label
+            for="sales-rep-filter"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Sales Rep</label
+          >
+          <select
+            id="sales-rep-filter"
+            name="sales-rep"
+            class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="">All</option>
+            <!-- Options will be populated dynamically -->
+          </select>
+        </div>
+        <div>
+          <label
+            for="deal-stage-filter"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Deal Stage</label
+          >
+          <select
+            id="deal-stage-filter"
+            name="deal-stage"
+            class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="">All</option>
+            <option value="Proposal Sent">Proposal Sent</option>
+            <option value="Negotiation">Negotiation</option>
+            <option value="Verbal Agreement">Verbal Agreement</option>
+            <option value="Closed Won">Closed Won</option>
+            <option value="Closed Lost">Closed Lost</option>
+          </select>
+        </div>
+        <div>
+          <label
+            for="forecast-month-filter"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Forecast Month</label
+          >
+          <select
+            id="forecast-month-filter"
+            name="forecast-month"
+            class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="">All</option>
+            <option value="2025-04">Apr-25</option>
+            <option value="2025-05">May-25</option>
+            <option value="2025-06">Jun-25</option>
+            <option value="2025-07">Jul-25</option>
+          </select>
+        </div>
+        <div>
+          <label
+            for="search-deal-filter"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Search</label
+          >
+          <input
+            type="text"
+            id="search-deal-filter"
+            name="search-deal"
+            placeholder="Customer/Project name..."
+            class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+      </section>
+
+      <!-- Summary Cards Section -->
+      <section
+        class="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
+        <div class="summary-card bg-blue-50 border-blue-200">
+          <h3 class="text-sm font-medium text-blue-700">Total Forecast Value</h3>
+          <p
+            class="text-2xl font-semibold text-blue-900 mt-1"
+            id="summary-total-value"
+          >
+            ฿ 0
+          </p>
+          <p class="text-xs text-blue-600 mt-1" id="summary-total-deals">
+            from 0 deals
+          </p>
+          <p
+            class="text-xs text-gray-500 mt-1 flex items-center"
+            id="summary-total-trend"
+          >
+            <i
+              data-lucide="minus"
+              class="w-4 h-4 mr-1 trend-icon trend-neutral"
+            ></i>
+            <span id="summary-total-change">-- vs Prev. Period</span>
+          </p>
+        </div>
+        <div class="summary-card bg-green-50 border-green-200">
+          <h3 class="text-sm font-medium text-green-700">
+            Total Weighted Value
+          </h3>
+          <p
+            class="text-2xl font-semibold text-green-900 mt-1"
+            id="summary-weighted-value"
+          >
+            ฿ 0
+          </p>
+          <p class="text-xs text-green-600 mt-1">
+            Expected to be realized
+          </p>
+          <p
+            class="text-xs text-gray-500 mt-1 flex items-center"
+            id="summary-weighted-trend"
+          >
+            <i
+              data-lucide="minus"
+              class="w-4 h-4 mr-1 trend-icon trend-neutral"
+            ></i>
+            <span id="summary-weighted-change">-- vs Prev. Period</span>
+          </p>
+        </div>
+        <div class="summary-card bg-yellow-50 border-yellow-200">
+          <h3 class="text-sm font-medium text-yellow-700">
+            Pipeline Deals
+          </h3>
+          <p
+            class="text-2xl font-semibold text-yellow-900 mt-1"
+            id="summary-pipeline-deals"
+          >
+            0
+          </p>
+          <p class="text-xs text-yellow-600 mt-1">Excludes Closed Won/Lost</p>
+          <p
+            class="text-xs text-gray-500 mt-1 flex items-center"
+            id="summary-pipeline-trend"
+          >
+            <i
+              data-lucide="minus"
+              class="w-4 h-4 mr-1 trend-icon trend-neutral"
+            ></i>
+            <span id="summary-pipeline-change">-- vs Prev. Period</span>
+          </p>
+        </div>
+        <div class="summary-card bg-purple-50 border-purple-200">
+          <h3 class="text-sm font-medium text-purple-700">
+            Win Rate
+          </h3>
+          <p
+            class="text-2xl font-semibold text-purple-900 mt-1"
+            id="summary-win-rate"
+          >
+            0%
+          </p>
+          <p class="text-xs text-purple-600 mt-1">Calculated from closed deals</p>
+          <p
+            class="text-xs text-gray-500 mt-1 flex items-center"
+            id="summary-winrate-trend"
+          >
+            <i
+              data-lucide="minus"
+              class="w-4 h-4 mr-1 trend-icon trend-neutral"
+            ></i>
+            <span id="summary-winrate-change">-- vs Prev. Period</span>
+          </p>
+        </div>
+      </section>
+
+      <!-- Charts Section -->
+      <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="chart-container">
+          <h3 class="chart-title">Forecast & Actual by Month (Weighted)</h3>
+          <div class="h-72">
+            <canvas id="monthlyForecastChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-container">
+          <h3 class="chart-title">Deal Stage Proportion (Count)</h3>
+          <div class="h-72 flex items-center justify-center relative">
+            <canvas
+              id="dealStageChart"
+              style="max-width: 320px; max-height: 320px"
+            ></canvas>
+          </div>
+        </div>
+        <div class="chart-container md:col-span-2">
+          <h3 class="chart-title">Sales Performance (Weighted Value)</h3>
+          <div class="h-72">
+            <canvas id="salesPerformanceChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Table Section -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">
+          Order Forecast Details
+        </h2>
+        <div class="overflow-x-auto bg-white rounded-lg shadow border">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-100">
+              <tr>
+                <th scope="col" class="th-style">Customer</th>
+                <th scope="col" class="th-style">Project/Deal</th>
+                <th scope="col" class="th-style text-right">Total Value</th>
+                <th scope="col" class="th-style text-center">% Prob.</th>
+                <th scope="col" class="th-style text-right">
+                  Weighted Value
+                </th>
+                <th scope="col" class="th-style">Deal Stage</th>
+                <th scope="col" class="th-style text-center">Forecast Close</th>
+                <th scope="col" class="th-style">Sales Rep</th>
+                <th scope="col" class="th-style text-center">Last Updated</th>
+                <th scope="col" class="th-style text-center">Actions</th>
+              </tr>
+            </thead>
+            <!-- **** TBODY is initially empty. Populated by script.js **** -->
+            <tbody
+              id="forecast-table-body"
+              class="bg-white divide-y divide-gray-200"
+            >
+              <!-- Example Row Structure (for reference, will be removed by JS):
+                        <tr data-sales-rep="..." data-deal-stage="..." data-close-date="..." data-value="..." data-weighted-value="...">
+                            <td class="td-style customer-name">...</td>
+                            <td class="td-style project-name">...</td>
+                            <td class="td-style text-right">...</td>
+                            <td class="td-style text-center">...%</td>
+                            <td class="td-style font-medium text-right weighted-value-cell">...</td>
+                            <td class="td-style deal-stage-cell"><span class="status-badge ...">...</span></td>
+                            <td class="td-style text-center close-date-cell">...</td>
+                            <td class="td-style sales-rep-cell">...</td>
+                            <td class="td-style text-center">...</td>
+                            <td class="td-style text-center action-cell">
+                                <button class="action-button"><span data-feather="edit-2"></span></button>
+                                <button class="action-button ml-2"><span data-feather="message-square"></span></button>
+                            </td>
+                        </tr>
+                         -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-4 flex justify-between items-center">
+          <span class="text-sm text-gray-700" id="pagination-info">
+            Showing 0 to 0 of 0 entries
+          </span>
+          <div class="pagination-buttons">
+            <button class="pagination-button" disabled>
+              <span data-feather="chevron-left"></span>
+            </button>
+            <button class="pagination-button" disabled>
+              <span data-feather="chevron-right"></span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <!-- End max-w-7xl -->
+
+    <!-- Load main script as MODULE -->
+    <script type="module" src="script.js"></script>
+    <!-- Feather icons auto-replacement -->
+    <script>
+      // Replace all feather icons on initial load
+      if (window.feather && typeof window.feather.replace === "function") {
+        window.feather.replace();
+      }
+    </script>
+  </body>
+</html>
