@@ -6,10 +6,7 @@
     <title>Order Forecast Dashboard (Google Sheet)</title>
 
     <!-- External Libraries & Frameworks -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/@tailwindcss/ui@latest/dist/tailwind-ui.min.css"
-      rel="stylesheet"
-    />
+    <!-- Removed outdated @tailwindcss/ui link -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -56,17 +53,42 @@
       Chart.register(DoughnutLabel)
     </script>
 
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <!-- Link to External CSS -->
     <link rel="stylesheet" href="style.css" />
     <!-- ADD Feather Icons CDN before any script that uses feather.replace() -->
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 
     <style>
-      /* Additional styles kept in-page for reference only */
-      /* We've moved these styles to style.css */
+      /* Direct styling for table container to override any conflicts */
+      .table-container {
+        background-color: white !important;
+        border-radius: 0.5rem !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        border: 1px solid #e5e7eb !important;
+        margin-bottom: 1.5rem !important;
+        overflow-x: auto !important;
+      }
+
+      /* Table styles */
+      .table-container table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+
+      /* Table header styles */
+      .table-container thead {
+        background-color: #f9fafb !important;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
     </style>
   </head>
-  <body class="bg-gray-100 p-4 md:p-8">
+  <body class="bg-gray-100">
     <script>
       // Redirect to login if not authenticated
       if (localStorage.getItem("orderforecast_auth") !== "1") {
@@ -75,18 +97,7 @@
     </script>
 
     <!-- Loading Indicator -->
-    <div
-      id="loading-overlay"
-      style="
-        display: none;
-        position: fixed;
-        inset: 0px;
-        background-color: rgba(255, 255, 255, 0.8);
-        z-index: 100;
-        justify-content: center;
-        align-items: center;
-      "
-    >
+    <div id="loading-overlay">
       <div class="text-center">
         <svg
           class="animate-spin h-8 w-8 text-indigo-600 mx-auto mb-2"
@@ -114,254 +125,103 @@
     </div>
 
     <!-- Error Message Area -->
-    <div
-      id="error-message-area"
-      style="
-        display: none;
-        background-color: #fee2e2;
-        color: #dc2626;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        border: 1px solid #fecaca;
-        border-radius: 0.375rem;
-      "
-    ></div>
+    <div id="error-message-area"></div>
 
     <!-- Fixed Navbar with Header and Filters -->
     <div class="fixed-navbar">
-      <div class="px-4 md:px-8 py-4 bg-white border-b border-gray-200">
-        <!-- Header Row -->
-        <div class="dashboard-header">
-          <div>
-            <h1 class="text-2xl md:text-3xl font-semibold text-gray-800">
-              Order Forecast Dashboard
-            </h1>
-            <p class="text-gray-500">Data from Google Sheet</p>
-          </div>
+      <div class="dashboard-header">
+        <div class="dashboard-title">
+          <h1>Order Forecast</h1>
+          <p class="subtitle">Google Sheet Data</p>
+        </div>
 
-          <div class="flex space-x-3 items-center">
-            <button
-              id="toggle-filters-btn"
-              class="toggle-filters-btn flex items-center"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="feather feather-filter mr-1 h-4 w-4"
-              >
-                <polygon
-                  points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"
-                ></polygon>
-              </svg>
-              <span>Filters</span>
-            </button>
+        <div class="navbar-actions">
+          <button id="toggle-summary-btn" class="toggle-summary-btn">
+            <i data-feather="bar-chart-2"></i>
+            <span>Summary</span>
+          </button>
 
-            <button
-              onclick="localStorage.removeItem('orderforecast_auth');window.location.href='login.html'"
-              class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-md transition"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="feather feather-log-out h-4 w-4 inline-block mr-1"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-              Logout
-            </button>
-          </div>
+          <button id="toggle-filters-btn" class="toggle-filters-btn">
+            <i data-feather="filter"></i>
+            <span>Filters</span>
+          </button>
+
+          <button
+            onclick="localStorage.removeItem('orderforecast_auth');window.location.href='login.html'"
+            class="logout-btn"
+          >
+            <i data-feather="log-out"></i>
+            <span>Logout</span>
+          </button>
         </div>
       </div>
 
       <!-- Summary Cards Row -->
-      <div class="px-4 md:px-8 py-3 bg-white">
-        <div class="summary-cards-grid">
-          <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h3 class="text-sm font-medium text-blue-700">
-              Total Forecast Value
-            </h3>
-            <p
-              class="text-2xl font-bold text-blue-900"
-              id="summary-total-value"
-            >
-              ฿208,150,000
-            </p>
-            <div class="flex justify-between items-center">
-              <p class="text-sm text-blue-600" id="summary-total-deals">
-                จากดีล 12 รายการ
-              </p>
-              <p
-                class="text-sm text-gray-500 flex items-center"
-                id="summary-total-trend"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-trending-up trend-icon trend-up h-4 w-4 mr-1"
-                >
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                  <polyline points="17 6 23 6 23 12"></polyline>
-                </svg>
-                <span id="summary-total-change">10% vs Prev.</span>
-              </p>
-            </div>
+      <div class="summary-cards-grid">
+        <div class="summary-card blue">
+          <h3>Total Forecast</h3>
+          <p class="value" id="summary-total-value">฿208,150,000</p>
+          <div class="card-footer">
+            <span class="card-label" id="summary-total-deals">12 deals</span>
+            <span class="trend" id="summary-total-trend">
+              <i data-feather="trending-up" class="trend-icon"></i>
+              <span id="summary-total-change">10%</span>
+            </span>
           </div>
-          <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <h3 class="text-sm font-medium text-green-700">
-              Total Weighted Value
-            </h3>
-            <p
-              class="text-2xl font-bold text-green-900"
-              id="summary-weighted-value"
-            >
-              ฿72,375,000
-            </p>
-            <div class="flex justify-between items-center">
-              <p class="text-sm text-green-600">Expected</p>
-              <p
-                class="text-sm text-gray-500 flex items-center"
-                id="summary-weighted-trend"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-trending-up trend-icon trend-up h-4 w-4 mr-1"
-                >
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                  <polyline points="17 6 23 6 23 12"></polyline>
-                </svg>
-                <span id="summary-weighted-change">10% vs Prev.</span>
-              </p>
-            </div>
+        </div>
+
+        <div class="summary-card green">
+          <h3>Weighted Value</h3>
+          <p class="value" id="summary-weighted-value">฿72,375,000</p>
+          <div class="card-footer">
+            <span class="card-label">Expected</span>
+            <span class="trend" id="summary-weighted-trend">
+              <i data-feather="trending-up" class="trend-icon"></i>
+              <span id="summary-weighted-change">10%</span>
+            </span>
           </div>
-          <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h3 class="text-sm font-medium text-yellow-700">Pipeline Deals</h3>
-            <p
-              class="text-2xl font-bold text-yellow-900"
-              id="summary-pipeline-deals"
-            >
-              5
-            </p>
-            <div class="flex justify-between items-center">
-              <p class="text-sm text-yellow-600">Active</p>
-              <p
-                class="text-sm text-gray-500 flex items-center"
-                id="summary-pipeline-trend"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-trending-down trend-icon trend-down h-4 w-4 mr-1"
-                >
-                  <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
-                  <polyline points="17 18 23 18 23 12"></polyline>
-                </svg>
-                <span id="summary-pipeline-change">17% vs Prev.</span>
-              </p>
-            </div>
+        </div>
+
+        <div class="summary-card yellow">
+          <h3>Pipeline Deals</h3>
+          <p class="value" id="summary-pipeline-deals">5</p>
+          <div class="card-footer">
+            <span class="card-label">Active</span>
+            <span class="trend" id="summary-pipeline-trend">
+              <i data-feather="trending-down" class="trend-icon"></i>
+              <span id="summary-pipeline-change">17%</span>
+            </span>
           </div>
-          <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-            <h3 class="text-sm font-medium text-purple-700">Win Rate</h3>
-            <p class="text-2xl font-bold text-purple-900" id="summary-win-rate">
-              71%
-            </p>
-            <div class="flex justify-between items-center">
-              <p class="text-sm text-purple-600">Closed deals</p>
-              <p
-                class="text-sm text-gray-500 flex items-center"
-                id="summary-winrate-trend"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-trending-up trend-icon trend-up h-4 w-4 mr-1"
-                >
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                  <polyline points="17 6 23 6 23 12"></polyline>
-                </svg>
-                <span id="summary-winrate-change">4% vs Prev.</span>
-              </p>
-            </div>
+        </div>
+
+        <div class="summary-card purple">
+          <h3>Win Rate</h3>
+          <p class="value" id="summary-win-rate">71%</p>
+          <div class="card-footer">
+            <span class="card-label">Closed</span>
+            <span class="trend" id="summary-winrate-trend">
+              <i data-feather="trending-up" class="trend-icon"></i>
+              <span id="summary-winrate-change">4%</span>
+            </span>
           </div>
         </div>
       </div>
 
       <!-- Filters section (collapsible) -->
-      <div
-        class="fixed-navbar-filters px-4 md:px-8 py-4 bg-gray-50 border-b border-gray-200"
-      >
-        <div class="filter-row mb-4">
-          <div>
-            <label
-              for="sales-rep-filter"
-              class="block text-sm font-medium text-gray-700 mb-2"
-              >Sales Rep</label
-            >
-            <select
-              id="sales-rep-filter"
-              name="sales-rep"
-              class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            >
+      <div class="filters-section" id="filters-section">
+        <div class="filter-row">
+          <div class="filter-control">
+            <label for="sales-rep-filter">Sales Rep</label>
+            <select id="sales-rep-filter" name="sales-rep">
               <option value="">All</option>
               <option value="Boworn">Boworn</option>
               <option value="Lalipas">Lalipas</option>
             </select>
           </div>
-          <div>
-            <label
-              for="deal-stage-filter"
-              class="block text-sm font-medium text-gray-700 mb-2"
-              >Deal Stage</label
-            >
-            <select
-              id="deal-stage-filter"
-              name="deal-stage"
-              class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            >
+
+          <div class="filter-control">
+            <label for="deal-stage-filter">Deal Stage</label>
+            <select id="deal-stage-filter" name="deal-stage">
               <option value="">All</option>
               <option value="Closed Won">Closed Won</option>
               <option value="Negotiation">Negotiation</option>
@@ -370,17 +230,10 @@
               <option value="Closed Lost">Closed Lost</option>
             </select>
           </div>
-          <div>
-            <label
-              for="forecast-month-filter"
-              class="block text-sm font-medium text-gray-700 mb-2"
-              >Forecast Month</label
-            >
-            <select
-              id="forecast-month-filter"
-              name="forecast-month"
-              class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            >
+
+          <div class="filter-control">
+            <label for="forecast-month-filter">Forecast Month</label>
+            <select id="forecast-month-filter" name="forecast-month">
               <option value="">All</option>
               <option value="2025-04">Apr-25</option>
               <option value="2025-05">May-25</option>
@@ -388,70 +241,40 @@
               <option value="2025-07">Jul-25</option>
             </select>
           </div>
-          <div>
-            <label
-              for="search-deal-filter"
-              class="block text-sm font-medium text-gray-700 mb-2"
-              >Search</label
-            >
+
+          <div class="filter-control">
+            <label for="search-deal-filter">Search</label>
             <input
               type="text"
               id="search-deal-filter"
               name="search-deal"
               placeholder="Customer/Project name..."
-              class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
         </div>
+
         <div class="filter-row">
-          <div>
-            <label
-              for="start-date-filter"
-              class="block text-sm font-medium text-gray-700 mb-2"
-              >Start Date</label
-            >
-            <input
-              type="date"
-              id="start-date-filter"
-              name="start-date"
-              class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            />
+          <div class="filter-control">
+            <label for="start-date-filter">Start Date</label>
+            <input type="date" id="start-date-filter" name="start-date" />
           </div>
-          <div>
-            <label
-              for="end-date-filter"
-              class="block text-sm font-medium text-gray-700 mb-2"
-              >End Date</label
-            >
-            <input
-              type="date"
-              id="end-date-filter"
-              name="end-date"
-              class="filter-control w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            />
+
+          <div class="filter-control">
+            <label for="end-date-filter">End Date</label>
+            <input type="date" id="end-date-filter" name="end-date" />
           </div>
         </div>
       </div>
     </div>
 
     <!-- Main content area -->
-    <div class="main-content">
+    <div class="main-content" id="main-content">
       <!-- Charts Section -->
       <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="chart-container">
           <h3 class="chart-title">Forecast &amp; Actual by Month (Weighted)</h3>
           <div class="h-72">
-            <canvas
-              id="monthlyForecastChart"
-              width="605"
-              height="382"
-              style="
-                display: block;
-                box-sizing: border-box;
-                height: 306px;
-                width: 484px;
-              "
-            ></canvas>
+            <canvas id="monthlyForecastChart"></canvas>
           </div>
         </div>
         <div class="chart-container">
@@ -460,19 +283,7 @@
             class="h-96 flex items-center justify-center relative"
             id="dealStageChart-wrapper"
           >
-            <canvas
-              id="dealStageChart"
-              style="
-                max-width: 100%;
-                max-height: 100%;
-                display: block;
-                box-sizing: border-box;
-                height: 408px;
-                width: 484px;
-              "
-              width="605"
-              height="510"
-            ></canvas>
+            <canvas id="dealStageChart"></canvas>
           </div>
         </div>
 
@@ -480,17 +291,7 @@
         <div class="chart-container">
           <h3 class="chart-title">Sales Performance (Weighted Value)</h3>
           <div class="h-80">
-            <canvas
-              id="salesPerformanceChart"
-              width="605"
-              height="425"
-              style="
-                display: block;
-                box-sizing: border-box;
-                height: 340px;
-                width: 484px;
-              "
-            ></canvas>
+            <canvas id="salesPerformanceChart"></canvas>
           </div>
         </div>
         <!-- Right column charts -->
@@ -499,17 +300,7 @@
             Forecast Accuracy (Weighted vs. Actual Closed)
           </h3>
           <div class="h-80">
-            <canvas
-              id="forecastAccuracyChart"
-              width="605"
-              height="425"
-              style="
-                display: block;
-                box-sizing: border-box;
-                height: 340px;
-                width: 484px;
-              "
-            ></canvas>
+            <canvas id="forecastAccuracyChart"></canvas>
           </div>
         </div>
 
@@ -517,34 +308,14 @@
         <div class="chart-container">
           <h3 class="chart-title">Sales Funnel (Deal Count by Stage)</h3>
           <div class="h-80">
-            <canvas
-              id="salesFunnelChart"
-              width="605"
-              height="425"
-              style="
-                display: block;
-                box-sizing: border-box;
-                height: 340px;
-                width: 484px;
-              "
-            ></canvas>
+            <canvas id="salesFunnelChart"></canvas>
           </div>
         </div>
         <!-- Right column charts -->
         <div class="chart-container">
           <h3 class="chart-title">Deal Aging by Stage (Count by Age Bucket)</h3>
           <div class="h-80">
-            <canvas
-              id="dealAgingChart"
-              width="605"
-              height="425"
-              style="
-                display: block;
-                box-sizing: border-box;
-                height: 340px;
-                width: 484px;
-              "
-            ></canvas>
+            <canvas id="dealAgingChart"></canvas>
           </div>
         </div>
       </section>
@@ -554,7 +325,17 @@
         <h2 class="text-xl font-semibold text-gray-800 mb-4">
           Order Forecast Details
         </h2>
-        <div class="table-container bg-white rounded-lg shadow border">
+        <div
+          class="table-container"
+          style="
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+          "
+        >
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-100">
               <tr>
@@ -682,44 +463,75 @@
 
     <!-- Load main script as MODULE -->
     <script type="module" src="script.js"></script>
+
     <!-- Feather icons auto-replacement -->
     <script>
       // Replace all feather icons on initial load
-      if (window.feather && typeof window.feather.replace === "function") {
-        window.feather.replace()
-      }
-
-      // Add filter toggle functionality
       document.addEventListener("DOMContentLoaded", function () {
-        const toggleBtn = document.getElementById("toggle-filters-btn")
-        const filtersSection = document.querySelector(".fixed-navbar-filters")
-        const mainContent = document.querySelector(".main-content")
-        const navbar = document.querySelector(".fixed-navbar")
+        if (window.feather && typeof window.feather.replace === "function") {
+          window.feather.replace()
+        }
 
-        // Initialize filters as expanded
-        filtersSection.classList.add("expanded")
+        // Add filter toggle functionality
+        const toggleBtn = document.getElementById("toggle-filters-btn")
+        const filtersSection = document.getElementById("filters-section")
+        const mainContent = document.getElementById("main-content")
+
+        // Initialize filters as collapsed
+        filtersSection.classList.remove("expanded")
 
         toggleBtn.addEventListener("click", function () {
           filtersSection.classList.toggle("expanded")
+          mainContent.classList.toggle("filters-hidden")
 
-          // Calculate navbar height and adjust main content padding
-          setTimeout(() => {
-            const navbarHeight = navbar.getBoundingClientRect().height
-            mainContent.style.paddingTop = `${navbarHeight}px`
-          }, 300) // Wait for transition to complete
+          // Update button state
+          this.classList.toggle("active")
+
+          // Refresh feather icons after DOM changes
+          if (window.feather && typeof window.feather.replace === "function") {
+            window.feather.replace()
+          }
         })
 
-        // Initial adjustment
-        setTimeout(() => {
-          const navbarHeight = navbar.getBoundingClientRect().height
-          mainContent.style.paddingTop = `${navbarHeight}px`
-        }, 100)
+        // Add summary cards toggle functionality
+        const toggleSummaryBtn = document.getElementById("toggle-summary-btn")
+        const summaryCardsGrid = document.querySelector(".summary-cards-grid")
 
-        // Also adjust on window resize
-        window.addEventListener("resize", function () {
-          const navbarHeight = navbar.getBoundingClientRect().height
-          mainContent.style.paddingTop = `${navbarHeight}px`
+        // Initialize summary cards as expanded by default
+        toggleSummaryBtn.classList.add("active")
+
+        toggleSummaryBtn.addEventListener("click", function () {
+          summaryCardsGrid.classList.toggle("collapsed")
+          this.classList.toggle("active")
+
+          // Update body padding when summary is toggled
+          if (summaryCardsGrid.classList.contains("collapsed")) {
+            document.body.style.paddingTop = `${
+              document.querySelector(".dashboard-header").offsetHeight
+            }px`
+          } else {
+            document.body.style.paddingTop = `calc(${
+              document.querySelector(".dashboard-header").offsetHeight
+            }px + var(--summary-cards-height))`
+          }
+
+          // Refresh feather icons after DOM changes
+          if (window.feather && typeof window.feather.replace === "function") {
+            window.feather.replace()
+          }
         })
+
+        // Set initial date values if not already set
+        const startDate = document.getElementById("start-date-filter")
+        const endDate = document.getElementById("end-date-filter")
+
+        if (!startDate.value) {
+          startDate.value = "2025-03-01"
+        }
+
+        if (!endDate.value) {
+          endDate.value = "2025-12-06"
+        }
       })
     </script>
   </body>

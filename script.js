@@ -6,6 +6,12 @@ import {
   initializeRowSelection,
   initializePagination,
   getStatusBadgeClass,
+  formatDealStageCell,
+  formatCurrencyCell,
+  formatPercentCell,
+  formatDateCell,
+  createActionButtons,
+  generateTableRow,
 } from "./table.js"
 import { fetchDataFromSheet } from "./dataFetch.js"
 import { initializeCharts, charts, enhancedPalette } from "./chartInit.js" // Add enhancedPalette import
@@ -245,55 +251,14 @@ function populateTable(data) {
       const stageBadgeClass = getStatusBadgeClass(deal.dealStage)
 
       // Format values for display
-      const formatCurrency = (value) =>
-        (value || 0).toLocaleString("th-TH", {
-          style: "currency",
-          currency: "THB",
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        })
-      const displayTotalValue = formatCurrency(deal.totalValue)
-      const displayWeightedValue = formatCurrency(deal.weightedValue)
-      const displayProb = (deal.probabilityPercent || 0).toFixed(0) + "%"
+      const displayTotalValue = formatCurrencyCell(deal.totalValue)
+      const displayWeightedValue = formatCurrencyCell(deal.weightedValue)
+      const displayProb = formatPercentCell(deal.probabilityPercent)
 
       // Format dates
-      const formatDate = (dateInput) => {
-        if (!dateInput) return "N/A"
-
-        let date
-        if (dateInput instanceof Date && !isNaN(dateInput.getTime())) {
-          date = dateInput
-        } else if (typeof dateInput === "string") {
-          const parsedDate = new Date(
-            dateInput + (dateInput.includes("T") ? "" : "T00:00:00")
-          )
-          if (!isNaN(parsedDate.getTime())) {
-            date = parsedDate
-          } else {
-            return dateInput
-          }
-        } else {
-          return String(dateInput)
-        }
-
-        try {
-          const day = String(date.getDate()).padStart(2, "0")
-          const month = String(date.getMonth() + 1).padStart(2, "0")
-          const year = String(date.getFullYear()).slice(-2)
-          return `${day}/${month}/${year}`
-        } catch (formatError) {
-          console.error(
-            "formatDate: Error formatting date object:",
-            date,
-            formatError
-          )
-          return "Invalid Date"
-        }
-      }
-
-      const displayCloseDate = formatDate(deal.expectedCloseDate)
-      const displayLastUpdated = formatDate(deal.lastUpdated)
-      const displayDateCreated = formatDate(deal.dateCreated)
+      const displayCloseDate = formatDateCell(deal.expectedCloseDate)
+      const displayLastUpdated = formatDateCell(deal.lastUpdated)
+      const displayDateCreated = formatDateCell(deal.dateCreated)
 
       // Calculate age in days
       let ageDays = null
@@ -351,38 +316,13 @@ function populateTable(data) {
       }
 
       // Create row HTML with enhanced styling
-      row.innerHTML = `
-          <td class="td-style customer-name">${deal.customerName || "N/A"}</td>
-          <td class="td-style project-name">
-            ${deal.projectName || "N/A"}
-            ${
-              deal.notes
-                ? `<span class="notes-preview ml-1" title="${
-                    deal.notes
-                  }">(${deal.notes.substring(0, 20)}${
-                    deal.notes.length > 20 ? "..." : ""
-                  })</span>`
-                : ""
-            }
-          </td>
-          <td class="td-style text-right">${displayTotalValue}</td>
-          <td class="td-style text-center">${displayProb}</td>
-          <td class="td-style font-medium text-right weighted-value-cell">${displayWeightedValue}</td>
-          <td class="td-style deal-stage-cell"><span class="${stageBadgeClass}">${
-        deal.dealStage || "Unknown"
-      }</span></td>
-          <td class="td-style text-center close-date-cell ${pastDueClass}">${displayCloseDate}</td>
-          <td class="td-style sales-rep-cell">${deal.salesRep || "Unknown"}</td>
-          <td class="td-style text-center">${displayLastUpdated}</td>
-          <td class="td-style text-center ${
-            ageDays > 45 ? "stale-deal" : ""
-          }">${ageDays != null ? ageDays : "-"}</td>
-          <td class="td-style text-center action-cell">
-              <button class="action-button action-button-view" title="View Details"><span data-feather="eye"></span></button>
-              <button class="action-button" title="Edit (Not Implemented)"><span data-feather="edit-2"></span></button>
-              <button class="action-button" title="Comment (Not Implemented)"><span data-feather="message-square"></span></button>
-          </td>
-      `
+      row.innerHTML = generateTableRow(deal, {
+        stageBadgeClass,
+        displayCloseDate,
+        ageDays,
+        pastDueClass,
+        index,
+      })
       tableBody.appendChild(row)
     } catch (error) {
       console.error(
