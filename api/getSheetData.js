@@ -11,7 +11,7 @@ require("dotenv").config()
 const apiKey = process.env.GOOGLE_API_KEY
 const sheetId = process.env.GOOGLE_SHEET_ID
 const sheetName = process.env.SHEET_NAME || "Sheet1"
-const sheetRange = process.env.SHEET_RANGE || "A2:M"
+const sheetRange = process.env.SHEET_RANGE || "A2:N"
 
 // --- Serverless Function Handler ---
 module.exports = async (req, res) => {

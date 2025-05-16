@@ -3,16 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Order Forecast Dashboard (Google Sheet)</title>
+    <title>Order Forecast Dashboard</title>
 
     <!-- External Libraries & Frameworks -->
-    <!-- Removed outdated @tailwindcss/ui link -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <!-- Custom CSS for user preferences and themes -->
+    <link rel="stylesheet" href="css/userPreferences.css" />
+    <!-- Custom CSS for collapsible sections -->
+    <link rel="stylesheet" href="css/collapsibleSections.css" />
     <!-- Load Chart.js and plugins in correct order -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -53,46 +56,39 @@
       Chart.register(DoughnutLabel)
     </script>
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
     <!-- Link to External CSS -->
-    <link rel="stylesheet" href="style.css" />
+    <!-- New modular CSS structure -->
+    <link rel="stylesheet" href="css/variables.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/table.css" />
+    <link rel="stylesheet" href="css/filters.css" />
+    <link rel="stylesheet" href="css/charts.css" />
+    <link rel="stylesheet" href="css/utilities.css" />
+    <link rel="stylesheet" href="css/modal.css" />
+    <link rel="stylesheet" href="css/dashboardCustomization.css" />
+    <link rel="stylesheet" href="css/dealForm.css" />
+    <link rel="stylesheet" href="css/historyTracker.css" />
+    <link rel="stylesheet" href="css/advancedForecasting.css" />
+    <link rel="stylesheet" href="css/crmIntegration.css" />
     <!-- ADD Feather Icons CDN before any script that uses feather.replace() -->
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-
-    <style>
-      /* Direct styling for table container to override any conflicts */
-      .table-container {
-        background-color: white !important;
-        border-radius: 0.5rem !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-        border: 1px solid #e5e7eb !important;
-        margin-bottom: 1.5rem !important;
-        overflow-x: auto !important;
-      }
-
-      /* Table styles */
-      .table-container table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-      }
-
-      /* Table header styles */
-      .table-container thead {
-        background-color: #f9fafb !important;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-      }
-    </style>
+    <!-- ADD Lucide Icons for modern icon support -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   </head>
-  <body class="bg-gray-100">
+  <body>
     <script>
-      // Redirect to login if not authenticated
-      if (localStorage.getItem("orderforecast_auth") !== "1") {
-        window.location.href = "login.html"
+      // Check for authentication token - this is just a basic check
+      // The full authentication check is in script.js
+      const AUTH_TOKEN_KEY = 'orderforecast_auth_token';
+      const REDIRECT_FLAG_KEY = 'orderforecast_redirect_flag';
+      
+      // Only redirect if we haven't just been redirected here
+      if (!localStorage.getItem(AUTH_TOKEN_KEY) && 
+          sessionStorage.getItem(REDIRECT_FLAG_KEY) !== 'to_dashboard') {
+        console.log('[Auth Check] No token found, redirecting to login');
+        sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
+        window.location.href = 'login.html';
       }
     </script>
 
@@ -125,13 +121,32 @@
 
     <!-- Error Message Area -->
     <div id="error-message-area"></div>
+    
+    <!-- Chart Optimization Notification -->
+    <div id="chart-optimization-notice" class="chart-optimization-notice">
+      <div class="icon">
+        <i data-feather="zap"></i>
+      </div>
+      <div class="content">
+        <span>Chart optimization active for better performance</span>
+      </div>
+      <button class="close-btn" id="close-optimization-notice">&times;</button>
+    </div>
 
     <!-- Fixed Navbar with Header and Filters -->
     <div class="fixed-navbar">
       <div class="dashboard-header">
         <div class="dashboard-title">
           <h1>Order Forecast</h1>
-          <p class="subtitle">Google Sheet Data</p>
+          <p class="subtitle">Sales Pipeline Dashboard</p>
+          <div class="last-refresh-container">
+            <i data-feather="clock" class="refresh-icon"></i>
+            <span>Last updated: <span id="last-refresh-time">--:--:--</span></span>
+            <button id="refresh-data-btn" class="refresh-button">
+              <i data-feather="refresh-cw" class="refresh-icon"></i>
+              <span>Refresh</span>
+            </button>
+          </div>
         </div>
 
         <div class="navbar-actions">
@@ -144,9 +159,14 @@
             <i data-feather="filter"></i>
             <span>Filters</span>
           </button>
+          
+          <button id="export-data-btn" class="export-button">
+            <i data-feather="download" class="export-icon"></i>
+            <span>Export</span>
+          </button>
 
           <button
-            onclick="localStorage.removeItem('orderforecast_auth');window.location.href='login.html'"
+            onclick="localStorage.removeItem('orderforecast_auth_token');localStorage.removeItem('orderforecast_user');sessionStorage.setItem('orderforecast_redirect_flag', 'to_login');window.location.href='login.html'"
             class="logout-btn"
           >
             <i data-feather="log-out"></i>
@@ -159,10 +179,12 @@
       <div class="summary-cards-grid">
         <div class="summary-card blue">
           <h3>Total Forecast</h3>
-          <p class="value" id="summary-total-value">฿208,150,000</p>
+          <p class="value" id="summary-total-value">$1,250,000</p>
           <div class="card-footer">
             <span class="card-label" id="summary-total-deals">12 deals</span>
-            <span class="trend" id="summary-total-trend">
+            <span class="trend trend-up" id="summary-total-trend">
+              <i data-feather="arrow-up"></i> 8.5%
+            </span>
               <i data-feather="trending-up" class="trend-icon"></i>
               <span id="summary-total-change">10%</span>
             </span>
@@ -171,22 +193,26 @@
 
         <div class="summary-card green">
           <h3>Weighted Value</h3>
-          <p class="value" id="summary-weighted-value">฿72,375,000</p>
+          <p class="value" id="summary-weighted-value">$723,750</p>
           <div class="card-footer">
-            <span class="card-label">Expected</span>
-            <span class="trend" id="summary-weighted-trend">
+            <span class="card-label" id="summary-weighted-percent">57.9% of total</span>
+            <span class="trend trend-up" id="summary-weighted-trend">
+              <i data-feather="arrow-up"></i> 5.2%
+            </span>
               <i data-feather="trending-up" class="trend-icon"></i>
               <span id="summary-weighted-change">10%</span>
             </span>
           </div>
         </div>
 
-        <div class="summary-card yellow">
+        <div class="summary-card orange">
           <h3>Pipeline Deals</h3>
-          <p class="value" id="summary-pipeline-deals">5</p>
+          <p class="value" id="summary-pipeline-count">9</p>
           <div class="card-footer">
-            <span class="card-label">Active</span>
-            <span class="trend" id="summary-pipeline-trend">
+            <span class="card-label" id="summary-pipeline-stages">4 stages</span>
+            <span class="trend trend-up" id="summary-pipeline-trend">
+              <i data-feather="arrow-up"></i> 2 new
+            </span>
               <i data-feather="trending-down" class="trend-icon"></i>
               <span id="summary-pipeline-change">17%</span>
             </span>
@@ -195,10 +221,12 @@
 
         <div class="summary-card purple">
           <h3>Win Rate</h3>
-          <p class="value" id="summary-win-rate">71%</p>
+          <p class="value" id="summary-win-rate">66.7%</p>
           <div class="card-footer">
-            <span class="card-label">Closed</span>
-            <span class="trend" id="summary-winrate-trend">
+            <span class="card-label" id="summary-win-ratio">2/3 won</span>
+            <span class="trend trend-up" id="summary-win-trend">
+              <i data-feather="arrow-up"></i> 16.7%
+            </span>
               <i data-feather="trending-up" class="trend-icon"></i>
               <span id="summary-winrate-change">4%</span>
             </span>
@@ -218,9 +246,10 @@
             </select>
           </div>
 
-          <div class="filter-control">
+          <!-- Multi-select Deal Stage filter -->
+          <div class="filter-control multi-select-container">
             <label for="deal-stage-filter">Deal Stage</label>
-            <select id="deal-stage-filter" name="deal-stage">
+            <select id="deal-stage-filter" name="deal-stage" multiple>
               <option value="">All</option>
               <option value="Closed Won">Closed Won</option>
               <option value="Negotiation">Negotiation</option>
@@ -228,6 +257,15 @@
               <option value="Lead">Lead</option>
               <option value="Closed Lost">Closed Lost</option>
             </select>
+            <div class="multi-select-wrapper">
+              <div class="dropdown-toggle">
+                <div class="selected-items">
+                  <span class="placeholder">All</span>
+                </div>
+                <span class="toggle-icon"><i data-feather="chevron-down"></i></span>
+              </div>
+              <div class="dropdown-container"></div>
+            </div>
           </div>
 
           <div class="filter-control">
@@ -247,12 +285,13 @@
               type="text"
               id="search-deal-filter"
               name="search-deal"
-              placeholder="Customer/Project name..."
+              placeholder="Search deals..."
             />
           </div>
         </div>
 
-        <div class="filter-row">
+        <!-- Date Range with Presets -->
+        <div class="filter-row" id="date-range-container">
           <div class="filter-control">
             <label for="start-date-filter">Start Date</label>
             <input type="date" id="start-date-filter" name="start-date" />
@@ -262,6 +301,14 @@
             <label for="end-date-filter">End Date</label>
             <input type="date" id="end-date-filter" name="end-date" />
           </div>
+          
+          <!-- Date presets will be added here by JavaScript -->
+          <div id="date-presets-container" class="date-presets-container"></div>
+        </div>
+        
+        <!-- Filter Logic Container (AND/OR) -->
+        <div class="filter-row" id="filter-logic-container">
+          <!-- Filter logic toggle will be added here by JavaScript -->
         </div>
       </div>
     </div>
@@ -269,9 +316,9 @@
     <!-- Main content area -->
     <div class="main-content" id="main-content">
       <!-- Charts Section -->
-      <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <section class="charts-grid">
         <div class="chart-container">
-          <h3 class="chart-title">Forecast &amp; Actual by Month (Weighted)</h3>
+          <h3 class="chart-title">Forecast & Actual by Month (Weighted)</h3>
           <div class="h-72">
             <canvas id="monthlyForecastChart"></canvas>
           </div>
@@ -317,13 +364,33 @@
             <canvas id="dealAgingChart"></canvas>
           </div>
         </div>
+
+        <!-- Win/Loss Reason Analysis Chart -->
+        <div class="chart-container">
+          <h3 class="chart-title">Win/Loss Reason Analysis (Closed Lost)</h3>
+          <div class="h-80">
+            <canvas id="winLossReasonChart"></canvas>
+          </div>
+        </div>
       </section>
 
       <!-- Table Section -->
-      <section>
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">
-          Order Forecast Details
-        </h2>
+      <section class="details-section">
+        <div class="section-header">
+          <h2 class="section-title">Order Forecast Details</h2>
+          <div class="flex items-center">
+            <!-- Export buttons container for email reports and export functionality -->
+            <div class="export-buttons me-2"></div>
+            <button id="add-deal-btn" class="primary-button">
+              <i data-feather="plus"></i>
+              <span>Add Deal</span>
+            </button>
+            <button id="customize-table-btn" class="secondary-button">
+              <i data-feather="sliders"></i>
+              <span>Customize</span>
+            </button>
+          </div>
+        </div>
         <div
           class="table-container"
           style="
@@ -414,54 +481,116 @@
         </div>
 
         <!-- Enhanced Pagination -->
-        <div class="pagination-controls mt-4">
-          <span class="text-sm text-gray-700" id="pagination-info">
-            Showing <span class="font-medium">1</span> to
-            <span class="font-medium">12</span> of
-            <span class="font-medium">12</span> total entries (matching filters)
+        <div class="pagination-controls">
+          <span id="pagination-info">
+            Showing <span>1</span> to
+            <span>12</span> of
+            <span>12</span> total entries (matching filters)
           </span>
-          <div class="pagination-buttons">
-            <button class="pagination-button" id="prev-page" disabled="">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="feather feather-chevron-left"
-              >
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
-            <span class="pagination-button active" id="page-1">1</span>
-            <button class="pagination-button" id="next-page" disabled="">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="feather feather-chevron-right"
-              >
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
+          <div class="pagination-actions">
+            <div class="rows-per-page">
+              <label for="rows-per-page">Show:</label>
+              <select id="rows-per-page">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div class="pagination-buttons">
+              <button id="pagination-prev" class="pagination-button" disabled>
+                <i data-feather="chevron-left"></i>
+              </button>
+              <div id="pagination-numbers" class="pagination-numbers">
+                <!-- Pagination numbers will be inserted here -->
+                <button class="pagination-button active">1</button>
+                <button class="pagination-button">2</button>
+              </div>
+              <button id="pagination-next" class="pagination-button">
+                <i data-feather="chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Advanced Forecasting Section -->
+      <section class="advanced-forecasting-section">
+        <div class="section-header">
+          <h2 class="section-title">Advanced Forecasting</h2>
+          <div class="flex items-center">
+            <button class="preferences-btn" id="forecasting-preferences-btn">
+              <i data-feather="settings"></i>
+              <span>Preferences</span>
             </button>
           </div>
+        </div>
+
+        <div class="forecasting-tabs">
+          <div class="forecasting-tab active" data-tab="trend-analysis">Trend Analysis</div>
+          <div class="forecasting-tab" data-tab="predictive-forecasting">Predictive Forecasting</div>
+          <div class="forecasting-tab" data-tab="scenario-modeling">What-If Scenarios</div>
+        </div>
+
+        <div class="forecasting-content active" id="trend-analysis-container">
+          <!-- Trend analysis content will be dynamically generated -->
+        </div>
+
+        <div class="forecasting-content" id="predictive-forecasting-container">
+          <!-- Predictive forecasting content will be dynamically generated -->
+        </div>
+
+        <div class="forecasting-content" id="scenario-modeling-container">
+          <!-- Scenario modeling content will be dynamically generated -->
+        </div>
+      </section>
+      
+      <!-- CRM Integration Section -->
+      <section class="crm-integration-section">
+        <div class="section-header">
+          <h2 class="section-title">CRM Integration</h2>
+          <div class="flex items-center">
+            <button class="preferences-btn" id="crm-preferences-btn">
+              <i data-feather="settings"></i>
+              <span>Preferences</span>
+            </button>
+          </div>
+        </div>
+        
+        <div id="crm-integration-container">
+          <!-- CRM integration content will be dynamically generated -->
         </div>
       </section>
     </div>
     <!-- End main-content -->
 
-    <!-- Load main script as MODULE -->
-    <script type="module" src="script.js"></script>
+    <!-- Debug utility for logging -->
+    <script src="utils/debugLog.js"></script>
+    
+    <!-- Authentication and session management -->
+    <script src="login.js"></script>
+    
+    <!-- Dashboard customization -->
+    <script src="dashboardCustomization.js"></script>
+    
+    <!-- User preferences module -->
+    <script type="module" src="js/components/userPreferences.js"></script>
+    
+    <!-- Main JavaScript module (entry point) -->
+    <script type="module" src="js/main.js"></script>
+    
+    <!-- Feather icons library -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Initialize feather icons -->
+    <script>
+      // Initialize feather icons after DOM is loaded
+      document.addEventListener('DOMContentLoaded', () => {
+        if (window.feather && typeof window.feather.replace === "function") {
+          window.feather.replace();
+        }
+      });
+    </script>
 
     <!-- Feather icons auto-replacement -->
     <script>

@@ -1,7 +1,10 @@
 // chartUpdate.js
 import { charts, enhancedPalette } from "./chartInit.js"
+import { adaptiveChartOptimization } from "./chartOptimization.js"
 
 function updateCharts(filteredData, chartColors, salesRepColors) {
+  // Apply adaptive chart optimization based on dataset size and device capabilities
+  console.log(`Updating charts with ${filteredData.length} data points`);
   // --- 1. Forecast & Actual by Month (Weighted) ---
   if (charts.monthlyForecastChart) {
     // Group by month (YYYY-MM), sum weightedValue and actual closed value
@@ -407,6 +410,48 @@ function updateCharts(filteredData, chartColors, salesRepColors) {
 
     charts.dealAgingChart.update()
   }
+
+  // --- 7. Win/Loss Reason Analysis Chart Update ---
+  if (charts.winLossReasonChart) {
+    // Filter for Closed Lost deals with a reason
+    const lostDeals = filteredData.filter(
+      (deal) =>
+        (deal.dealStage || "").toLowerCase() === "closed lost" &&
+        deal.winLossReason
+    )
+    // Count reasons
+    const reasonMap = {}
+    lostDeals.forEach((deal) => {
+      const reason = deal.winLossReason || "Other"
+      reasonMap[reason] = (reasonMap[reason] || 0) + 1
+    })
+    // Prepare data for chart
+    const labels = Object.keys(reasonMap)
+    const data = labels.map((r) => reasonMap[r])
+    // Assign colors (cycle if more reasons than colors)
+    const baseColors = [
+      enhancedPalette.red[0],
+      enhancedPalette.amber[0],
+      enhancedPalette.blue[0],
+      enhancedPalette.purple[0],
+      enhancedPalette.green[0],
+      enhancedPalette.indigo[0],
+      enhancedPalette.orange[0],
+      enhancedPalette.emerald[0],
+    ]
+    const backgroundColors = labels.map(
+      (_, i) => baseColors[i % baseColors.length]
+    )
+    charts.winLossReasonChart.data.labels = labels
+    charts.winLossReasonChart.data.datasets[0].data = data
+    charts.winLossReasonChart.data.datasets[0].backgroundColor =
+      backgroundColors
+    charts.winLossReasonChart.update()
+  }
+  
+  // Apply chart optimization after all charts have been updated with their data
+  // This ensures the optimization is applied to the final datasets
+  adaptiveChartOptimization(Object.values(charts).filter(chart => chart !== null), filteredData);
 }
 
 export { updateCharts }

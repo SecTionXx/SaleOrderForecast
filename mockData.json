@@ -1,0 +1,16 @@
+{
+  "values": [
+    ["DEAL-001", "2025-01-15", "Acme Corporation", "ERP Implementation", 150000, 90, 135000, "Negotiation", "2025-06-30", "Boworn", "2025-05-01", "Client is interested in full implementation", null, ""],
+    ["DEAL-002", "2025-02-10", "TechSolutions Inc", "Cloud Migration", 85000, 75, 63750, "Proposal Sent", "2025-07-15", "Lalipas", "2025-05-05", "Waiting for client feedback", null, ""],
+    ["DEAL-003", "2025-01-20", "Global Enterprises", "Security Audit", 45000, 95, 42750, "Closed Won", "2025-04-30", "Boworn", "2025-04-30", "Contract signed", "2025-04-30", "Competitive pricing"],
+    ["DEAL-004", "2025-03-05", "Innovate Ltd", "Mobile App Development", 120000, 60, 72000, "Lead", "2025-08-15", "Lalipas", "2025-05-10", "Initial discussions", null, ""],
+    ["DEAL-005", "2025-02-25", "DataCorp", "BI Dashboard", 95000, 80, 76000, "Negotiation", "2025-06-15", "Boworn", "2025-05-12", "Discussing contract terms", null, ""],
+    ["DEAL-006", "2025-01-10", "SmartSystems", "IoT Platform", 200000, 40, 80000, "Proposal Sent", "2025-07-30", "Lalipas", "2025-05-02", "Sent detailed proposal", null, ""],
+    ["DEAL-007", "2025-03-15", "EcoTech", "Sustainability Tracking", 75000, 85, 63750, "Negotiation", "2025-06-01", "Boworn", "2025-05-14", "Final price negotiations", null, ""],
+    ["DEAL-008", "2025-02-05", "HealthPlus", "Patient Portal", 110000, 30, 33000, "Lead", "2025-09-15", "Lalipas", "2025-05-03", "Early discussions", null, ""],
+    ["DEAL-009", "2025-01-30", "FinanceGroup", "Reporting System", 65000, 100, 65000, "Closed Won", "2025-04-15", "Boworn", "2025-04-15", "Implementation started", "2025-04-15", "Product features"],
+    ["DEAL-010", "2025-03-20", "RetailOne", "Inventory Management", 130000, 20, 26000, "Lead", "2025-10-01", "Lalipas", "2025-05-08", "Initial requirements gathering", null, ""],
+    ["DEAL-011", "2025-02-15", "LogisticsPro", "Fleet Tracking", 180000, 0, 0, "Closed Lost", "2025-05-15", "Boworn", "2025-05-15", "Client went with competitor", null, "Price too high"],
+    ["DEAL-012", "2025-03-01", "MediaMax", "Content Platform", 95000, 70, 66500, "Proposal Sent", "2025-07-01", "Lalipas", "2025-05-11", "Awaiting client decision", null, ""]
+  ]
+}

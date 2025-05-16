@@ -1,0 +1,211 @@
+/* collapsibleSections.css - Styles for collapsible sections in the dashboard */
+
+/* Chart Container Styles */
+.chart-container {
+  position: relative;
+  background-color: var(--bg-color, #fff);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+/* Chart Actions Container */
+.chart-actions {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 5;
+}
+
+/* Drag Handle */
+.drag-handle {
+  cursor: move;
+  padding: 0.25rem;
+  border-radius: 4px;
+  color: var(--text-muted, #6b7280);
+  transition: background-color 0.2s;
+}
+
+.drag-handle:hover {
+  background-color: var(--bg-hover, #e5e7eb);
+  color: var(--text-color, #111827);
+}
+
+/* Collapse Button */
+.chart-collapse-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  color: var(--text-muted, #6b7280);
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.chart-collapse-btn:hover {
+  background-color: var(--bg-hover, #e5e7eb);
+  color: var(--text-color, #111827);
+}
+
+/* Chart Title */
+.chart-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-right: 4rem; /* Make room for actions */
+  color: var(--text-color, #111827);
+}
+
+/* Collapsed State */
+.chart-container.collapsed {
+  padding-bottom: 0.5rem;
+}
+
+/* Drag and Drop States */
+.chart-container.dragging {
+  opacity: 0.7;
+  transform: scale(0.98);
+  z-index: 100;
+}
+
+.chart-container.drop-target {
+  border: 2px dashed transparent;
+}
+
+.chart-container.drag-over {
+  border-color: var(--primary-color, #4f46e5);
+  background-color: var(--bg-hover, #e5e7eb);
+}
+
+/* Section Collapsible Styles */
+.collapsible-section {
+  margin-bottom: 2rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-secondary, #f3f4f6);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.section-header:hover {
+  background-color: var(--bg-hover, #e5e7eb);
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-color, #111827);
+}
+
+.section-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, #6b7280);
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: transform 0.2s;
+}
+
+.section-content {
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  max-height: 2000px; /* Arbitrary large value */
+  opacity: 1;
+  overflow: hidden;
+}
+
+.section-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Rotate icon when collapsed */
+.section-header.collapsed .section-toggle {
+  transform: rotate(180deg);
+}
+
+/* Animation for collapsing/expanding */
+@keyframes collapseSection {
+  from { max-height: 2000px; opacity: 1; }
+  to { max-height: 0; opacity: 0; }
+}
+
+@keyframes expandSection {
+  from { max-height: 0; opacity: 0; }
+  to { max-height: 2000px; opacity: 1; }
+}
+
+/* Data Table Collapsible Sections */
+.table-section {
+  margin-bottom: 1.5rem;
+}
+
+.table-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-secondary, #f3f4f6);
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.table-section-header:hover {
+  background-color: var(--bg-hover, #e5e7eb);
+}
+
+.table-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-color, #111827);
+}
+
+.table-section-content {
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  max-height: 2000px;
+  opacity: 1;
+  overflow: hidden;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+
+.table-section-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+  border: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chart-actions {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+  
+  .chart-title {
+    padding-right: 3rem;
+  }
+  
+  .section-header {
+    padding: 0.5rem 0.75rem;
+  }
+}

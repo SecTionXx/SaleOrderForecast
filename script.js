@@ -13,14 +13,54 @@ import {
   createActionButtons,
   generateTableRow,
 } from "./table.js"
-import { fetchDataFromSheet } from "./dataFetch.js"
-import { initializeCharts, charts, enhancedPalette } from "./chartInit.js" // Add enhancedPalette import
+import { fetchDataWithCaching } from "./js/modules/dataFetch.js"
+import { initializeCharts, charts, enhancedPalette } from "./chartInit.js" 
 import { updateCharts } from "./chartUpdate.js"
+
+// Make charts available globally for PDF export
+window.charts = charts;
+import { exportToCSV, showExportOptions } from './exportData.js';
+import { initializeAdvancedFilters, getFilterLogic } from './advancedFilters.js';
+import { initializeDashboardCustomization, showPreferencesModal } from './dashboardCustomization.js';
+import { shouldOptimizeCharts } from './chartOptimization.js';
+import { initializeDealForm } from './dealForm.js';
+import { initializeEmailReports } from './emailReports.js';
+import { initializeHistoryTracker } from './historyTracker.js';
 
 // --- Global Variables ---
 let allDealsData = [] // Holds the data fetched from the sheet
+let filteredData = [] // Holds the filtered data
 let currentPage = 1
-const rowsPerPage = 50
+let itemsPerPage = 10
+let rowsPerPage = 10 // Number of rows per page for table pagination
+let sortColumn = 'lastUpdated'
+let sortDirection = 'desc'
+
+// Authentication constants
+const AUTH_TOKEN_KEY = 'orderforecast_auth_token'
+const AUTH_USER_KEY = 'orderforecast_user'
+const REDIRECT_FLAG_KEY = 'orderforecast_redirect_flag'
+
+// Use the DEBUG utility for logging
+function logAppDebug(message, data = null) {
+  if (window.DEBUG && DEBUG.debug) {
+    DEBUG.debug('App', message, data);
+  } else {
+    const timestamp = new Date().toISOString();
+    if (data) {
+      console.log(`[${timestamp}] [App] ${message}`, data);
+    } else {
+      console.log(`[${timestamp}] [App] ${message}`);
+    }
+  }
+}
+
+// Prevent redirect loops by adding a timestamp
+function preventRedirectLoop(url) {
+  // Add a timestamp parameter to prevent caching and loops
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}t=${Date.now()}`;
+}
 
 // --- Chart Colors ---
 const chartColors = {
@@ -54,22 +94,334 @@ function loadFiltersFromStorage() {
 
 // --- Main Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("script.js: DOM Loaded. Initializing Dashboard...")
-  initializeCharts(salesRepColors, chartColors) // Ensure charts are initialized first
-  fetchDataAndInitializeDashboard()
+  console.log("script.js: DOM Loaded. Checking authentication...")
+  
+  // Check if user is authenticated
+  checkAuthentication()
+    .then(isAuthenticated => {
+      if (isAuthenticated) {
+        console.log("User is authenticated. Initializing Dashboard...")
+        initializeDashboard()
+      } else {
+        console.log("User is not authenticated. Redirecting to login...")
+        window.location.href = "login.html"
+      }
+    })
+    .catch(error => {
+      console.error("Authentication check failed:", error)
+      // On error, redirect to login page
+      window.location.href = "login.html"
+    })
 })
+
+// Initialize the dashboard
+async function initializeDashboard() {
+  try {
+    // Initialize event listeners
+    initializeEventListeners()
+
+    // Fetch data and initialize dashboard
+    await fetchDataAndInitializeDashboard(false)
+
+    // Initialize feather icons
+    feather.replace()
+
+    // Set up the filter toggle button
+    setupFilterToggle()
+
+    // Set up summary toggle button
+    setupSummaryToggle()
+    
+    // Initialize advanced filters
+    initializeAdvancedFilters(handleFilterChange)
+    
+    // Initialize dashboard customization features
+    initializeDashboardCustomization()
+    
+    // Initialize chart optimization notification
+    initializeOptimizationNotice()
+    
+    // Initialize deal form functionality
+    initializeDealForm()
+    
+    // Initialize email report sharing functionality
+    initializeEmailReports()
+    
+    // Initialize history tracker functionality
+    initializeHistoryTracker()
+  } catch (error) {
+    console.error('Error initializing dashboard:', error)
+    displayErrorMessage('Failed to initialize dashboard. Please try again later.')
+  }
+}
+
+/**
+ * Check if the user is authenticated
+ * @returns {Promise<boolean>} - True if authenticated, false otherwise
+ */
+async function checkAuthentication() {
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  logAppDebug('Checking authentication token');
+  
+  if (!token) {
+    logAppDebug('No token found, redirecting to login');
+    // No token, redirect to login
+    sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
+    window.location.href = 'login.html';
+    return false;
+  }
+  
+  try {
+    // Get the base URL (handles both direct and proxy access)
+    const baseUrl = window.location.origin;
+    
+    logAppDebug('Verifying token with server');
+    // Verify token with server
+    const response = await fetch(`${baseUrl}/api/auth/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ token })
+    });
+    
+    const data = await response.json();
+    logAppDebug('Token verification response', data);
+    
+    if (!response.ok || !data.success) {
+      logAppDebug('Token invalid, redirecting to login');
+      // Invalid token, redirect to login
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+      sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
+      window.location.href = 'login.html';
+      return false;
+    }
+    
+    logAppDebug('Token valid, updating user info');
+    // Token is valid, update user info in UI
+    updateUserInfo(data.user);
+    return true;
+  } catch (error) {
+    logAppDebug('Authentication error:', error);
+    // On error, redirect to login
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_USER_KEY);
+    sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
+    window.location.href = 'login.html';
+    return false;
+  }
+}
+
+/**
+ * Update user information in the UI
+ * @param {Object} user - The user object from the server
+ */
+function updateUserInfo(user) {
+  if (!user) {
+    logAppDebug('No user data provided to updateUserInfo');
+    return;
+  }
+  
+  try {
+    // Store updated user info
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    
+    // Update UI elements with user info
+    const userNameElement = document.getElementById('user-name');
+    if (userNameElement) {
+      userNameElement.textContent = user.username || 'User';
+    }
+    
+    // Update role-based UI elements if needed
+    if (user.role === 'admin') {
+      // Show admin-specific elements
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = 'block';
+      });
+    }
+    
+    logAppDebug('User info updated successfully', user);
+  } catch (error) {
+    logAppDebug('Error updating user info:', error);
+  }
+}
+
+/**
+ * Get the authentication token
+ * @returns {string|null} - The authentication token or null if not authenticated
+ */
+function getAuthToken() {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+/**
+ * Get the current user information
+ * @returns {Object|null} - The user object or null if not authenticated
+ */
+function getCurrentUser() {
+  const userJson = localStorage.getItem(AUTH_USER_KEY);
+  if (!userJson) return null;
+  
+  try {
+    return JSON.parse(userJson);
+  } catch (error) {
+    console.error('Error parsing user data:', error);
+    return null;
+  }
+}
+
+/**
+ * Logout the current user
+ */
+function logout() {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_USER_KEY);
+  window.location.href = 'login.html';
+}
+
+// Initialize event listeners
+function initializeEventListeners() {
+  // Add event listeners to filter controls
+  document.getElementById('sales-rep-filter').addEventListener('change', handleFilterChange)
+  document.getElementById('deal-stage-filter').addEventListener('change', handleFilterChange)
+  document.getElementById('forecast-month-filter').addEventListener('change', handleFilterChange)
+  document.getElementById('search-deal-filter').addEventListener('input', handleFilterChange)
+  document.getElementById('start-date-filter').addEventListener('change', handleFilterChange)
+  document.getElementById('end-date-filter').addEventListener('change', handleFilterChange)
+  
+  // Add event listener for filter logic changes
+  document.addEventListener('filter-logic-changed', handleFilterChange)
+
+  // Add event listener to refresh button
+  document.getElementById('refresh-data-btn').addEventListener('click', () => {
+    fetchDataAndInitializeDashboard(true) // Force refresh
+  })
+
+  // Add event listener to export button
+  document.getElementById('export-data-btn').addEventListener('click', () => {
+    showExportOptions(getFilteredData())
+  })
+  
+  // Add event listener to logout button
+  const logoutBtn = document.querySelector('.logout-btn');
+  if (logoutBtn) {
+    logoutBtn.removeEventListener('click', () => {});
+    logoutBtn.addEventListener('click', logout);
+  }
+}
+
+// Helper function to get currently filtered data
+function getCurrentFilteredData() {
+  // If we don't have any data, return empty array
+  if (!allDealsData || !Array.isArray(allDealsData)) {
+    return []
+  }
+  
+  // Apply filters to the data
+  return applyFilters(allDealsData)
+}
+
+// Function to apply filters to the data
+function applyFilters(data) {
+  const salesRepFilter = document.getElementById('sales-rep-filter').value
+  const dealStageFilterElement = document.getElementById('deal-stage-filter')
+  const forecastMonthFilter = document.getElementById('forecast-month-filter').value
+  const searchFilter = document.getElementById('search-deal-filter').value.toLowerCase()
+  const startDateFilter = document.getElementById('start-date-filter').value
+  const endDateFilter = document.getElementById('end-date-filter').value
+  
+  // Get selected deal stages for multi-select
+  const dealStageContainer = dealStageFilterElement.closest('.multi-select-container')
+  let selectedDealStages = []
+  
+  if (dealStageContainer) {
+    const checkboxes = dealStageContainer.querySelectorAll('input[type="checkbox"]:checked')
+    selectedDealStages = Array.from(checkboxes).map(cb => cb.value)
+  } else {
+    // Fallback to single select if multi-select container not found
+    const dealStageFilter = dealStageFilterElement.value
+    if (dealStageFilter) selectedDealStages = [dealStageFilter]
+  }
+  
+  // Get filter logic (AND/OR)
+  const filterLogic = getFilterLogic()
+  
+  return data.filter(deal => {
+    // Create an array to track which filters pass
+    const filterResults = []
+    
+    // Apply sales rep filter
+    if (salesRepFilter) {
+      filterResults.push(deal.salesRep === salesRepFilter)
+    }
+
+    // Apply deal stage filter (multi-select)
+    if (selectedDealStages.length > 0) {
+      filterResults.push(selectedDealStages.includes(deal.dealStage))
+    }
+
+    // Apply forecast month filter (YYYY-MM format)
+    if (forecastMonthFilter) {
+      const forecastDate = new Date(deal.expectedCloseDate)
+      const forecastMonth = `${forecastDate.getFullYear()}-${String(
+        forecastDate.getMonth() + 1
+      ).padStart(2, '0')}`
+      filterResults.push(forecastMonth === forecastMonthFilter)
+    }
+
+    // Apply search filter (customer name or project name)
+    if (searchFilter) {
+      filterResults.push(
+        deal.customerName.toLowerCase().includes(searchFilter) ||
+        deal.projectName.toLowerCase().includes(searchFilter)
+      )
+    }
+
+    // Apply date range filters
+    if (startDateFilter) {
+      const startDate = new Date(startDateFilter)
+      const dealDate = new Date(deal.expectedCloseDate)
+      filterResults.push(dealDate >= startDate)
+    }
+
+    if (endDateFilter) {
+      const endDate = new Date(endDateFilter)
+      endDate.setHours(23, 59, 59, 999) // End of the day
+      const dealDate = new Date(deal.expectedCloseDate)
+      filterResults.push(dealDate <= endDate)
+    }
+    
+    // If no filters are active, return true
+    if (filterResults.length === 0) return true
+    
+    // Apply filter logic (AND/OR)
+    if (filterLogic === 'AND') {
+      // All filters must pass
+      return filterResults.every(result => result === true)
+    } else {
+      // At least one filter must pass
+      return filterResults.some(result => result === true)
+    }
+  })
+}
 
 // ==================================
 // DASHBOARD INITIALIZATION & DATA HANDLING
 // ==================================
-async function fetchDataAndInitializeDashboard() {
+async function fetchDataAndInitializeDashboard(forceFresh = false) {
   console.log("script.js: fetchDataAndInitializeDashboard Starting...")
   showLoadingIndicator(true)
   displayErrorMessage("") // Clear previous errors
 
   try {
-    allDealsData = await fetchDataFromSheet()
-    console.log("script.js: Data received from fetch:", allDealsData)
+    // Use the new caching functionality
+    allDealsData = await fetchDataWithCaching(forceFresh)
+    console.log("script.js: Data received:", allDealsData ? `${allDealsData.length} rows` : "No data")
+    
+    // Check if chart optimization should be applied based on dataset size and device capabilities
+    const optimizationActive = shouldOptimizeCharts() && allDealsData && allDealsData.length > 100;
+    showChartOptimizationNotice(optimizationActive);
 
     if (
       allDealsData &&
@@ -79,10 +431,13 @@ async function fetchDataAndInitializeDashboard() {
       console.log(
         `script.js: Valid data received (${allDealsData.length} rows). Populating UI...`
       )
-      populateSalesRepDropdown(allDealsData) // <-- Add this line
+      populateSalesRepDropdown(allDealsData)
       populateDealStageDropdown(allDealsData)
       populateTable(allDealsData)
       initializeFilteringAndUpdates() // Setup filters AFTER table exists
+      
+      // Update last refresh indicator
+      updateLastRefreshTime()
 
       // Initialize Lucide icons *after* initial UI population
       if (
@@ -100,7 +455,7 @@ async function fetchDataAndInitializeDashboard() {
       }
     } else {
       console.warn(
-        "script.js: No valid data returned from fetch. Displaying 'no data' message."
+        "script.js: No valid data returned. Displaying 'no data' message."
       )
       displayErrorMessage(
         "No data found in the specified Google Sheet range or sheet is empty."
@@ -114,18 +469,50 @@ async function fetchDataAndInitializeDashboard() {
     }
   } catch (error) {
     console.error("script.js: Error during data fetching or processing:", error)
-    displayErrorMessage(
-      error.message || "An unexpected error occurred while loading data."
-    )
+    
+    // Display user-friendly error message
+    displayErrorMessage(error.message || "An unexpected error occurred while loading data.")
+    
+    // Show error in table
     const tableBody = document.getElementById("forecast-table-body")
-    if (tableBody)
-      tableBody.innerHTML =
-        '<tr><td colspan="11" class="text-center py-4 text-red-600 font-semibold">Failed to load data. Check console and configuration.</td></tr>'
+    if (tableBody) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="11" class="text-center py-4">
+            <div class="flex flex-col items-center justify-center space-y-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p class="text-red-600 font-semibold">${error.message || "Failed to load data"}</p>
+              <button id="retry-fetch-btn" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                Retry
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+      
+      // Add event listener to retry button
+      document.getElementById('retry-fetch-btn')?.addEventListener('click', () => {
+        fetchDataAndInitializeDashboard(true); // Force fresh data on retry
+      });
+    }
+    
     updateSummaryCards([])
     updateCharts([], chartColors, salesRepColors)
   } finally {
     showLoadingIndicator(false)
     console.log("script.js: fetchDataAndInitializeDashboard Finished.")
+  }
+}
+
+// Function to update the last refresh time indicator
+function updateLastRefreshTime() {
+  const refreshTimeElement = document.getElementById('last-refresh-time')
+  if (refreshTimeElement) {
+    const now = new Date()
+    refreshTimeElement.textContent = now.toLocaleTimeString()
+    refreshTimeElement.setAttribute('title', now.toLocaleString())
   }
 }
 
@@ -606,18 +993,54 @@ function updateSortIndicators() {
 }
 
 // ==================================
-// UI HELPER FUNCTIONS (Unchanged from previous fix)
+// UI HELPER FUNCTIONS 
 // ==================================
 function showLoadingIndicator(show) {
-  const loader = document.getElementById("loading-overlay")
-  if (loader) loader.style.display = show ? "flex" : "none"
-}
-function displayErrorMessage(message) {
-  const errorDiv = document.getElementById("error-message-area")
-  if (errorDiv) {
-    errorDiv.textContent = message
-    errorDiv.style.display = message ? "block" : "none"
+  const overlay = document.getElementById("loading-overlay")
+  if (overlay) {
+    if (show) {
+      overlay.style.display = "flex"
+      // Add animation class if showing
+      overlay.classList.add('fade-in')
+    } else {
+      // Add fade-out animation
+      overlay.classList.add('fade-out')
+      // Remove after animation completes
+      setTimeout(() => {
+        overlay.style.display = "none"
+        overlay.classList.remove('fade-in', 'fade-out')
+      }, 300)
+    }
   }
+}
+
+function displayErrorMessage(message) {
+  const errorArea = document.getElementById("error-message-area")
+  if (!errorArea) return
+  
+  if (!message) {
+    errorArea.innerHTML = ""
+    return
+  }
+  
+  // Create a dismissible error message
+  errorArea.innerHTML = `
+    <div class="error-message">
+      <div class="error-content">
+        <svg xmlns="http://www.w3.org/2000/svg" class="error-icon" viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <span>${message}</span>
+      </div>
+      <button class="error-dismiss" onclick="this.parentElement.remove()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+  `
+  
+  // Hide loading indicator when showing error
   if (message) showLoadingIndicator(false)
 }
 function applyRowFormatting(row) {
@@ -695,6 +1118,72 @@ function updateSummaryCards(filteredData) {
     winRate.toFixed(0) + "%"
   updateTrend("summary-winrate", winRate, prevWinRate)
 }
+/**
+ * Handle filter change events
+ * This function is called whenever a filter is changed
+ */
+function handleFilterChange() {
+  resetPagination()
+  const filteredData = getCurrentFilteredData()
+  populateTable(filteredData)
+  updateSummaryCards(filteredData)
+  updateCharts(filteredData)
+}
+
+/**
+ * Show an error message to the user
+ * @param {string} message - The error message to display
+ */
+function showErrorMessage(message) {
+  displayErrorMessage(message)
+}
+
+/**
+ * Set up the filter toggle button to show/hide the filter panel
+ */
+function setupFilterToggle() {
+  const filterToggleBtn = document.getElementById('filter-toggle-btn');
+  const filterPanel = document.getElementById('filter-panel');
+  
+  if (filterToggleBtn && filterPanel) {
+    filterToggleBtn.addEventListener('click', () => {
+      filterPanel.classList.toggle('hidden');
+      // Update button text based on visibility
+      const isVisible = !filterPanel.classList.contains('hidden');
+      filterToggleBtn.innerHTML = isVisible ? 
+        '<i data-feather="chevron-up"></i> Hide Filters' : 
+        '<i data-feather="chevron-down"></i> Show Filters';
+      // Re-initialize feather icons
+      if (window.feather) {
+        window.feather.replace();
+      }
+    });
+  }
+}
+
+/**
+ * Set up the summary toggle button to show/hide the summary cards
+ */
+function setupSummaryToggle() {
+  const summaryToggleBtn = document.getElementById('summary-toggle-btn');
+  const summaryCards = document.getElementById('summary-cards');
+  
+  if (summaryToggleBtn && summaryCards) {
+    summaryToggleBtn.addEventListener('click', () => {
+      summaryCards.classList.toggle('hidden');
+      // Update button text based on visibility
+      const isVisible = !summaryCards.classList.contains('hidden');
+      summaryToggleBtn.innerHTML = isVisible ? 
+        '<i data-feather="chevron-up"></i> Hide Summary' : 
+        '<i data-feather="chevron-down"></i> Show Summary';
+      // Re-initialize feather icons
+      if (window.feather) {
+        window.feather.replace();
+      }
+    });
+  }
+}
+
 function updateTrend(summaryId, currentValue, previousValue) {
   const trendElement = document.getElementById(`${summaryId}-trend`)
   const changeElement = document.getElementById(`${summaryId}-change`)
@@ -743,6 +1232,41 @@ function updateTrend(summaryId, currentValue, previousValue) {
       window.feather.replace()
     }
   }
+}
+
+/**
+ * Show or hide the chart optimization notification
+ * @param {boolean} show - Whether to show the notification
+ */
+function showChartOptimizationNotice(show) {
+  const notice = document.getElementById('chart-optimization-notice');
+  if (!notice) return;
+  
+  if (show) {
+    notice.classList.add('active');
+    // Update feather icons
+    if (window.feather) {
+      window.feather.replace();
+    }
+  } else {
+    notice.classList.remove('active');
+  }
+}
+
+/**
+ * Initialize the chart optimization notification
+ */
+function initializeOptimizationNotice() {
+  const closeBtn = document.getElementById('close-optimization-notice');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      showChartOptimizationNotice(false);
+    });
+  }
+  
+  // Check if optimization should be applied based on device and dataset size
+  const optimizationActive = shouldOptimizeCharts() && allDealsData.length > 100;
+  showChartOptimizationNotice(optimizationActive);
 }
 
 // ==================================
