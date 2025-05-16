@@ -3,7 +3,8 @@
  * Handles fetching and caching data from the server
  */
 
-import { getAuthToken } from '../auth/auth.js';
+import apiService from './apiService.js';
+import { getSheetDataEndpoint } from './apiEndpoints.js';
 import { logDebug, logError } from './logger.js';
 
 // Cache settings
@@ -48,32 +49,21 @@ async function fetchDataWithCaching(forceFresh = false) {
 }
 
 /**
- * Fetch data from the server
+ * Fetch data from the server using the standardized API service
  * @returns {Promise<Array>} - The fetched data
  */
 async function fetchDataFromServer() {
-  const baseUrl = window.location.origin;
-  const token = getAuthToken();
-  
-  if (!token) {
-    throw new Error('No authentication token available');
+  try {
+    const endpoint = getSheetDataEndpoint();
+    return await apiService.get(endpoint);
+  } catch (error) {
+    // Enhanced error handling with standardized API service
+    const status = error.response?.status || 'Unknown';
+    const message = error.response?.statusText || error.message || 'Unknown error';
+    
+    // Throw a more descriptive error
+    throw new Error(`Failed to fetch data (${status}): ${message}`);
   }
-  
-  const response = await fetch(`${baseUrl}/api/getSheetData`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to fetch data: ${response.status} ${response.statusText} - ${errorText}`);
-  }
-  
-  const data = await response.json();
-  return data;
 }
 
 /**
@@ -137,9 +127,27 @@ function clearCache() {
   }
 }
 
+/**
+ * Get the timestamp of the last data fetch
+ * @returns {number|null} - Timestamp of the last fetch or null if not available
+ */
+function getLastFetchTimestamp() {
+  try {
+    const cacheJson = localStorage.getItem(CACHE_KEY);
+    if (!cacheJson) return null;
+    
+    const cache = JSON.parse(cacheJson);
+    return cache.timestamp;
+  } catch (error) {
+    logError('Error retrieving last fetch timestamp:', error);
+    return null;
+  }
+}
+
 // Export functions
 export {
   fetchDataWithCaching,
   fetchDataFromServer,
-  clearCache
+  clearCache,
+  getLastFetchTimestamp
 };

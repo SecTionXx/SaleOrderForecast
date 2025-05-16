@@ -7,16 +7,32 @@
     "role": "admin",
     "name": "Administrator",
     "email": "admin@example.com",
-    "lastLogin": "2025-05-16T03:08:15.408Z"
+    "lastLogin": "2025-05-16T15:23:06.202Z",
+    "created": "2025-05-16T15:23:06.199Z",
+    "status": "active"
   },
   {
     "id": "2",
+    "username": "editor",
+    "passwordHash": "421643c048d6b184a1b6babe1bff6200af3b682f95409518e0c0850243f661bd19598eab15f6e79db0952ae7e92d0dead2aff2fda370981022d1125f46f97083",
+    "salt": "default-salt-12345",
+    "role": "editor",
+    "name": "Content Editor",
+    "email": "editor@example.com",
+    "lastLogin": null,
+    "created": "2025-05-16T15:23:06.199Z",
+    "status": "active"
+  },
+  {
+    "id": "3",
     "username": "user",
     "passwordHash": "e03a7a9d00a05136f3ddf44f0d404fa884aab42500f6f9f2ad57e803e4f5d5699d76354fe52982cfba3f7a73c0b5bd7c84b3c7191259fcc51a5e948bcfb0ad00",
     "salt": "default-salt-12345",
     "role": "viewer",
     "name": "Regular User",
     "email": "user@example.com",
-    "lastLogin": null
+    "lastLogin": null,
+    "created": "2025-05-16T15:23:06.199Z",
+    "status": "active"
   }
 ]

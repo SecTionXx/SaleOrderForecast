@@ -7,6 +7,7 @@
 const AUTH_TOKEN_KEY = 'orderforecast_auth_token';
 const AUTH_USER_KEY = 'orderforecast_user';
 const REDIRECT_FLAG_KEY = 'orderforecast_redirect_flag';
+const SESSION_INFO_KEY = 'orderforecast_session';
 
 import { logDebug } from '../utils/logger.js';
 
@@ -36,32 +37,89 @@ async function checkAuthentication() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ token })
+      body: JSON.stringify({ token }),
+      credentials: 'include' // Include cookies for refresh token
     });
+    
+    // Check for token refresh header
+    const newToken = response.headers.get('X-New-Token');
+    if (newToken) {
+      logDebug('Received refreshed token from server');
+      localStorage.setItem(AUTH_TOKEN_KEY, newToken);
+    }
     
     const data = await response.json();
     logDebug('Token verification response', data);
     
     if (!response.ok || !data.success) {
-      logDebug('Token invalid, redirecting to login');
-      // Invalid token, redirect to login
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-      localStorage.removeItem(AUTH_USER_KEY);
-      sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
-      return false;
+      // Try to refresh the token
+      logDebug('Token invalid, attempting to refresh');
+      const refreshResult = await refreshToken(token);
+      
+      if (!refreshResult.success) {
+        logDebug('Token refresh failed, redirecting to login');
+        await logout(true);
+        return false;
+      } else {
+        logDebug('Token refreshed successfully');
+        return true;
+      }
     }
     
-    logDebug('Token valid, updating user info');
-    // Valid token, update user info
-    if (data.user) {
+    // Update user info if needed
+    const storedUser = JSON.parse(localStorage.getItem(AUTH_USER_KEY) || '{}');
+    if (data.user && (storedUser.role !== data.user.role)) {
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
-      updateUserInfo(data.user);
     }
     
+    logDebug('User authenticated successfully');
     return true;
   } catch (error) {
-    console.error('Error verifying authentication:', error);
+    logDebug('Authentication check error', error);
+    // Error during verification, redirect to login
+    await logout(true);
     return false;
+  }
+}
+
+/**
+ * Refresh an expired token
+ * @param {string} token - The expired token
+ * @returns {Promise<Object>} - Result with success status
+ */
+async function refreshToken(token) {
+  const baseUrl = window.location.origin;
+  
+  logDebug('Attempting to refresh token');
+  
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ token }),
+      credentials: 'include' // Include cookies for refresh token
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok && data.success && data.token) {
+      // Update token in storage
+      localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+      
+      // Update user info if provided
+      if (data.user) {
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+      }
+      
+      return { success: true };
+    } else {
+      return { success: false, message: data.message || 'Token refresh failed' };
+    }
+  } catch (error) {
+    logDebug('Token refresh error:', error);
+    return { success: false, message: 'Token refresh error' };
   }
 }
 
@@ -137,12 +195,82 @@ function getCurrentUser() {
 
 /**
  * Logout the current user
+ * @param {boolean} redirect - Whether to redirect to login page
+ * @returns {Promise<void>}
  */
-function logout() {
+async function logout(redirect = true) {
+  logDebug('Logging out user');
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  const baseUrl = window.location.origin;
+  
+  // Clear local storage
   localStorage.removeItem(AUTH_TOKEN_KEY);
   localStorage.removeItem(AUTH_USER_KEY);
-  sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
-  window.location.href = 'login.html';
+  localStorage.removeItem(SESSION_INFO_KEY);
+  
+  // If we have a token, invalidate the session on the server
+  if (token) {
+    try {
+      await fetch(`${baseUrl}/api/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include' // Include cookies to clear refresh token
+      });
+    } catch (error) {
+      logDebug('Logout error:', error);
+    }
+  }
+  
+  if (redirect) {
+    // Set redirect flag to prevent loops
+    sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
+    window.location.href = preventRedirectLoop('login.html');
+  }
+}
+
+/**
+ * Get user permissions
+ * @returns {Promise<Array>} - Array of permissions
+ */
+async function getUserPermissions() {
+  const token = getAuthToken();
+  if (!token) return [];
+  
+  const baseUrl = window.location.origin;
+  
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/permissions`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
+      return data.permissions || [];
+    }
+    
+    return [];
+  } catch (error) {
+    logDebug('Error fetching permissions:', error);
+    return [];
+  }
+}
+
+/**
+ * Check if user has a specific permission
+ * @param {string} permission - Permission to check
+ * @returns {Promise<boolean>} - True if user has permission
+ */
+async function hasPermission(permission) {
+  const permissions = await getUserPermissions();
+  return permissions.includes(permission);
 }
 
 /**
@@ -160,8 +288,12 @@ function preventRedirectLoop(url) {
 export {
   checkAuthentication,
   updateUserInfo,
+  getInitials,
   getAuthToken,
   getCurrentUser,
   logout,
-  preventRedirectLoop
+  preventRedirectLoop,
+  refreshToken,
+  getUserPermissions,
+  hasPermission
 };

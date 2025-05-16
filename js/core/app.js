@@ -9,7 +9,6 @@ import { fetchDataWithCaching } from '../utils/dataFetch.js';
 import { initializeTable, populateTable } from '../components/table.js';
 import { initializeCharts, updateCharts } from '../charts/charts.js';
 import { initializeFilters, applyFilters, handleFilterChange } from '../components/filters.js';
-import { initializeDashboardCustomization } from '../components/dashboardCustomization.js';
 import { initializeDealForm } from '../components/dealForm.js';
 import { initializeHistoryTracker } from '../components/historyTracker.js';
 import { initializeEmailReports } from '../components/emailReports.js';
@@ -20,6 +19,7 @@ import { initializeAdvancedForecasting } from '../components/advancedForecasting
 import { initializeCrmConnector } from '../integrations/crmConnector.js';
 import { initializeCrmPreferences } from '../integrations/crmPreferences.js';
 import { initializeForecastingTabs } from '../components/forecastingTabs.js';
+import { initializeUserPreferences, getUserPreference, applyTheme, applyColorScheme } from '../components/userPreferences.js';
 
 // --- Global Variables ---
 let allDealsData = []; // Holds the data fetched from the sheet
@@ -62,65 +62,105 @@ function loadFiltersFromStorage() {
  * Called when the DOM is loaded
  */
 function init() {
-  logDebug("app.js: DOM Loaded. Checking authentication...");
+  logDebug('Initializing application...');
   
-  // Check if user is authenticated
-  checkAuthentication()
-    .then(isAuthenticated => {
-      if (isAuthenticated) {
-        logDebug("User is authenticated. Initializing Dashboard...");
-        initializeDashboard();
-      } else {
-        logDebug("User is not authenticated. Redirecting to login...");
-        window.location.href = "login.html";
-      }
-    })
-    .catch(error => {
-      console.error("Authentication check failed:", error);
-      // On error, redirect to login page
-      window.location.href = "login.html";
-    });
+  // Check authentication
+  if (!checkAuthentication()) {
+    logDebug('Authentication failed, redirecting to login');
+    window.location.href = 'login.html';
+    return;
+  }
+  
+  // Initialize user preferences (themes, colors, etc.)
+  initializeUserPreferences();
+  
+  // Apply saved preferences
+  const theme = getUserPreference('theme', 'light');
+  const colorScheme = getUserPreference('colorScheme', 'default');
+  applyTheme(theme);
+  applyColorScheme(colorScheme);
+  
+  // Initialize dashboard customization features
+  if (typeof window.initializeDashboardCustomization === 'function') {
+    window.initializeDashboardCustomization();
+  }
+  
+  // Initialize the dashboard
+  initializeDashboard();
+  
+  // Initialize event listeners
+  initializeEventListeners();
+  
+  // Update user info in the UI
+  updateUserInfo();
+  
+  logDebug('Application initialized successfully');
 }
 
 /**
  * Initialize the dashboard
  * Sets up all components and fetches initial data
  */
-async function initializeDashboard() {
-  try {
-    // Show loading indicator
-    showLoadingIndicator(true);
-    
-    // Initialize event listeners
-    initializeEventListeners();
-
-    // Fetch data and initialize dashboard
-    await fetchDataAndInitializeDashboard(false);
-
-    // Initialize feather icons
-    feather.replace();
-
-    // Initialize all components
-    initializeFilters(handleFilterChange);
-    initializeDashboardCustomization();
-    initializeDealForm();
-    initializeEmailReports();
-    initializeHistoryTracker();
-    
-    // Initialize advanced forecasting
-    initializeAdvancedForecasting(allDealsData);
-    initializeForecastingTabs();
+function initializeDashboard() {
+  logDebug('Initializing dashboard...');
   
-    // Initialize CRM integration
-    initializeCrmConnector();
-    initializeCrmPreferences();
-    
-    // Hide loading indicator
-    showLoadingIndicator(false);
-  } catch (error) {
-    console.error('Error initializing dashboard:', error);
-    displayErrorMessage('Failed to initialize dashboard. Please try again later.');
-    showLoadingIndicator(false);
+  // Show loading indicator
+  showLoadingIndicator(true);
+  
+  // Initialize components
+  initializeFilters();
+  initializeTable();
+  initializeCharts();
+  initializeDealForm();
+  initializeHistoryTracker();
+  initializeEmailReports();
+  initializeAdvancedForecasting();
+  initializeCrmConnector();
+  initializeCrmPreferences();
+  initializeForecastingTabs();
+  
+  // Apply default view based on user preferences
+  const defaultView = getUserPreference('defaultView', 'charts');
+  applyDefaultView(defaultView);
+  
+  // Load saved filters
+  const savedFilters = loadFiltersFromStorage();
+  if (savedFilters) {
+    applyFilters(savedFilters);
+  }
+  
+  // Fetch data and initialize dashboard
+  fetchDataAndInitializeDashboard();
+  
+  // Hide loading indicator
+  showLoadingIndicator(false);
+  
+  logDebug('Dashboard initialized');
+}
+
+/**
+ * Apply default view preference
+ * @param {string} view - View to apply (charts, table, combined)
+ */
+function applyDefaultView(view) {
+  const chartSection = document.querySelector('.charts-grid');
+  const tableSection = document.querySelector('.details-section');
+  
+  if (!chartSection || !tableSection) return;
+  
+  switch (view) {
+    case 'charts':
+      chartSection.style.display = 'grid';
+      tableSection.style.display = 'none';
+      break;
+    case 'table':
+      chartSection.style.display = 'none';
+      tableSection.style.display = 'block';
+      break;
+    case 'combined':
+      chartSection.style.display = 'grid';
+      tableSection.style.display = 'block';
+      break;
   }
 }
 

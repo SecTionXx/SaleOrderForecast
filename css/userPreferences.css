@@ -1,0 +1,225 @@
+/* userPreferences.css - Styles for user preferences modal and theme settings */
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.3s;
+}
+
+.modal-content {
+  position: relative;
+  background-color: var(--bg-color, #fff);
+  margin: 10% auto;
+  padding: 0;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 600px;
+  animation: slideIn 0.3s;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text-color, #111827);
+}
+
+.modal-body {
+  padding: 1.5rem;
+  color: var(--text-color, #374151);
+}
+
+.close {
+  color: var(--text-muted, #6b7280);
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close:hover {
+  color: var(--text-color, #111827);
+}
+
+/* Preferences Sections */
+.preferences-section {
+  margin-bottom: 1.5rem;
+}
+
+.preferences-section h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+  color: var(--text-color, #111827);
+}
+
+.preference-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.preference-option {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--bg-secondary, #f3f4f6);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.preference-option:hover {
+  background-color: var(--bg-hover, #e5e7eb);
+}
+
+.preference-option input {
+  margin-right: 0.5rem;
+}
+
+.preference-option .option-label {
+  font-weight: 500;
+}
+
+/* Action Buttons */
+.preferences-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+/* Toast Notification */
+.toast {
+  visibility: hidden;
+  min-width: 250px;
+  background-color: var(--toast-bg, #4b5563);
+  color: #fff;
+  text-align: center;
+  border-radius: 8px;
+  padding: 16px;
+  position: fixed;
+  z-index: 1001;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.toast.show {
+  visibility: visible;
+  animation: fadeIn 0.3s, fadeOut 0.5s 2.5s;
+}
+
+/* Theme Classes */
+.theme-light {
+  --bg-color: #ffffff;
+  --bg-secondary: #f3f4f6;
+  --bg-hover: #e5e7eb;
+  --text-color: #111827;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --toast-bg: #4b5563;
+}
+
+.theme-dark {
+  --bg-color: #1f2937;
+  --bg-secondary: #374151;
+  --bg-hover: #4b5563;
+  --text-color: #f9fafb;
+  --text-muted: #d1d5db;
+  --border-color: #374151;
+  --toast-bg: #6b7280;
+}
+
+/* Color Scheme Classes */
+.color-default {
+  --chart-color-1: #4f46e5;
+  --chart-color-2: #0ea5e9;
+  --chart-color-3: #10b981;
+  --chart-color-4: #f59e0b;
+  --chart-color-5: #ef4444;
+  --chart-color-6: #8b5cf6;
+}
+
+.color-pastel {
+  --chart-color-1: #a5b4fc;
+  --chart-color-2: #93c5fd;
+  --chart-color-3: #86efac;
+  --chart-color-4: #fcd34d;
+  --chart-color-5: #fca5a5;
+  --chart-color-6: #c4b5fd;
+}
+
+.color-vibrant {
+  --chart-color-1: #4338ca;
+  --chart-color-2: #0284c7;
+  --chart-color-3: #059669;
+  --chart-color-4: #d97706;
+  --chart-color-5: #b91c1c;
+  --chart-color-6: #7c3aed;
+}
+
+.color-monochrome {
+  --chart-color-1: #111827;
+  --chart-color-2: #374151;
+  --chart-color-3: #4b5563;
+  --chart-color-4: #6b7280;
+  --chart-color-5: #9ca3af;
+  --chart-color-6: #d1d5db;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+  .modal-content {
+    margin: 15% auto;
+    width: 95%;
+  }
+  
+  .preference-options {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .preferences-actions {
+    flex-direction: column;
+  }
+  
+  .preferences-actions button {
+    width: 100%;
+  }
+}

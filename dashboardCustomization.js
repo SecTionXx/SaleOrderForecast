@@ -764,8 +764,6 @@ function applyInitialTheme() {
 // Apply initial theme
 applyInitialTheme();
 
-// Export functions
-export {
-  initializeDashboardCustomization,
-  showPreferencesModal
-};
+// Make functions available globally instead of using ES6 exports
+window.initializeDashboardCustomization = initializeDashboardCustomization;
+window.showPreferencesModal = showPreferencesModal;

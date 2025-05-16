@@ -536,9 +536,7 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
-// Export functions
-export {
-  initializeEmailReports,
-  showEmailModal,
-  sendEmailReport
-};
+// Make functions available globally instead of using ES6 exports
+window.initializeEmailReports = initializeEmailReports;
+window.showEmailModal = showEmailModal;
+window.getCurrentFilteredData = getCurrentFilteredData;

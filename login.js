@@ -1,7 +1,9 @@
 // login.js - Server-side authentication with JWT
-const AUTH_TOKEN_KEY = 'orderforecast_auth_token';
-const AUTH_USER_KEY = 'orderforecast_user';
-const REDIRECT_FLAG_KEY = 'orderforecast_redirect_flag';
+// Use existing constants from the inline script if already defined
+var AUTH_TOKEN_KEY = window.AUTH_TOKEN_KEY || 'orderforecast_auth_token';
+var AUTH_USER_KEY = window.AUTH_USER_KEY || 'orderforecast_user';
+var REDIRECT_FLAG_KEY = window.REDIRECT_FLAG_KEY || 'orderforecast_redirect_flag';
+var SESSION_INFO_KEY = window.SESSION_INFO_KEY || 'orderforecast_session';
 
 // Use the DEBUG utility for logging
 function logAuthDebug(message, data = null) {
@@ -123,27 +125,120 @@ function verifyToken(token) {
     },
     body: JSON.stringify({ token })
   })
-  .then(response => response.json())
+  .then(response => {
+    // Check for token refresh header
+    const newToken = response.headers.get('X-New-Token');
+    if (newToken) {
+      logAuthDebug('Received refreshed token from server');
+      localStorage.setItem(AUTH_TOKEN_KEY, newToken);
+      // Update token for subsequent API calls
+      token = newToken;
+    }
+    return response.json();
+  })
   .then(data => {
     if (!data.success) {
-      logAuthDebug('Token invalid on dashboard, redirecting to login');
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-      localStorage.removeItem(AUTH_USER_KEY);
-      // Set redirect flag to prevent loops
-      sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
-      window.location.href = 'login.html';
+      logAuthDebug('Token invalid on dashboard, attempting to refresh');
+      // Try to refresh the token
+      refreshToken(token)
+        .then(refreshResult => {
+          if (!refreshResult.success) {
+            // Refresh failed, redirect to login
+            logAuthDebug('Token refresh failed, redirecting to login');
+            logout(true);
+          } else {
+            logAuthDebug('Token refreshed successfully');
+          }
+        })
+        .catch(() => {
+          logAuthDebug('Token refresh error, redirecting to login');
+          logout(true);
+        });
     } else {
       logAuthDebug('Token valid on dashboard');
+      // Update user info if needed
+      const storedUser = JSON.parse(localStorage.getItem(AUTH_USER_KEY) || '{}');
+      if (data.user && (storedUser.role !== data.user.role)) {
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+      }
     }
   })
   .catch(error => {
     logAuthDebug('Token verification error on dashboard', error);
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_USER_KEY);
+    logout(true);
+  });
+}
+
+/**
+ * Refresh an expired token
+ * @param {string} token - The expired token
+ * @returns {Promise} Promise resolving to the refresh result
+ */
+function refreshToken(token) {
+  const baseUrl = window.location.origin;
+  
+  logAuthDebug('Attempting to refresh token');
+  
+  return fetch(`${baseUrl}/api/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ token })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success && data.token) {
+      // Update token in storage
+      localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+      
+      // Update user info if provided
+      if (data.user) {
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+      }
+      
+      return { success: true };
+    } else {
+      return { success: false, message: data.message || 'Token refresh failed' };
+    }
+  })
+  .catch(error => {
+    logAuthDebug('Token refresh error:', error);
+    return { success: false, message: 'Token refresh error' };
+  });
+}
+
+/**
+ * Logout user
+ * @param {boolean} redirect - Whether to redirect to login page
+ */
+function logout(redirect = false) {
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  const baseUrl = window.location.origin;
+  
+  // Clear local storage
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_USER_KEY);
+  localStorage.removeItem(SESSION_INFO_KEY);
+  
+  // If we have a token, invalidate the session on the server
+  if (token) {
+    fetch(`${baseUrl}/api/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }).catch(error => {
+      logAuthDebug('Logout error:', error);
+    });
+  }
+  
+  if (redirect) {
     // Set redirect flag to prevent loops
     sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
     window.location.href = 'login.html';
-  });
+  }
 }
 
 // Setup login form event handlers
@@ -156,6 +251,21 @@ function setupLoginForm() {
   
   const errorDiv = document.getElementById('login-error');
   const loginButton = document.querySelector('.login-btn');
+  
+  // Add logout button if we're on the login page
+  const logoutButton = document.createElement('button');
+  logoutButton.className = 'logout-btn';
+  logoutButton.textContent = 'Logout from other devices';
+  logoutButton.style.display = 'none';
+  logoutButton.addEventListener('click', function() {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (token) {
+      invalidateOtherSessions(token);
+    }
+  });
+  
+  // Add the logout button after the login button
+  loginButton.parentNode.appendChild(logoutButton);
   
   logAuthDebug('Setting up login form handler');
   
@@ -193,7 +303,8 @@ function setupLoginForm() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password }),
+        credentials: 'include' // Include cookies in the request
       });
       
       const data = await response.json();
@@ -212,6 +323,14 @@ function setupLoginForm() {
       localStorage.setItem(AUTH_TOKEN_KEY, data.token);
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
       
+      // Store session info
+      const sessionInfo = {
+        loginTime: new Date().toISOString(),
+        username: data.user.username,
+        role: data.user.role
+      };
+      localStorage.setItem(SESSION_INFO_KEY, JSON.stringify(sessionInfo));
+      
       logAuthDebug('Login successful, redirecting to dashboard');
       
       // Set redirect flag to prevent loops
@@ -228,6 +347,67 @@ function setupLoginForm() {
       loginButton.textContent = 'Login';
     }
   });
+  
+  // Check if user has active sessions on other devices
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  if (token) {
+    checkActiveSessions(token, logoutButton);
+  }
+}
+
+/**
+ * Check for active sessions on other devices
+ * @param {string} token - JWT token
+ * @param {HTMLElement} logoutButton - Logout button element
+ */
+function checkActiveSessions(token, logoutButton) {
+  const baseUrl = window.location.origin;
+  
+  fetch(`${baseUrl}/api/auth/sessions`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success && data.sessions && data.sessions.length > 1) {
+      // Show logout button if there are multiple sessions
+      logoutButton.style.display = 'block';
+    }
+  })
+  .catch(error => {
+    logAuthDebug('Error checking sessions:', error);
+  });
+}
+
+/**
+ * Invalidate sessions on other devices
+ * @param {string} token - JWT token
+ */
+function invalidateOtherSessions(token) {
+  const baseUrl = window.location.origin;
+  
+  fetch(`${baseUrl}/api/auth/sessions/invalidate`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert('All other sessions have been logged out.');
+    } else {
+      alert('Failed to logout other sessions: ' + (data.message || 'Unknown error'));
+    }
+  })
+  .catch(error => {
+    logAuthDebug('Error invalidating sessions:', error);
+    alert('An error occurred while trying to logout other sessions.');
+  });
 }
 
 // Add helper text to show default credentials during development
@@ -243,8 +423,9 @@ function addHelperText() {
   helperText.innerHTML = `
     <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: #6b7280;">
       Default credentials:<br>
-      Username: <strong>admin</strong><br>
-      Password: <strong>admin123</strong>
+      Admin: <strong>admin</strong> / <strong>admin123</strong><br>
+      Editor: <strong>editor</strong> / <strong>editor123</strong><br>
+      Viewer: <strong>user</strong> / <strong>user123</strong>
     </p>
   `;
   

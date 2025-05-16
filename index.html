@@ -12,6 +12,10 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <!-- Custom CSS for user preferences and themes -->
+    <link rel="stylesheet" href="css/userPreferences.css" />
+    <!-- Custom CSS for collapsible sections -->
+    <link rel="stylesheet" href="css/collapsibleSections.css" />
     <!-- Load Chart.js and plugins in correct order -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -563,46 +567,28 @@
     <!-- Debug utility for logging -->
     <script src="utils/debugLog.js"></script>
     
-    <!-- Main JavaScript module (entry point) -->
-    <script type="module" src="js/index.js"></script>
+    <!-- Authentication and session management -->
+    <script src="login.js"></script>
     
-    <!-- Load main script as MODULE -->
-    <script type="module">
-      // Import the main script
-      import * as app from "./script.js"
-      
+    <!-- Dashboard customization -->
+    <script src="dashboardCustomization.js"></script>
+    
+    <!-- User preferences module -->
+    <script type="module" src="js/components/userPreferences.js"></script>
+    
+    <!-- Main JavaScript module (entry point) -->
+    <script type="module" src="js/main.js"></script>
+    
+    <!-- Feather icons library -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Initialize feather icons -->
+    <script>
       // Initialize feather icons after DOM is loaded
       document.addEventListener('DOMContentLoaded', () => {
-        feather.replace();
-      });
-    </script>
-    <script type="module" src="advancedFilters.js"></script>
-    
-    <!-- Ensure proper loading of module scripts -->
-    <script>
-      // Helper function to load modules with proper MIME type
-      function loadModuleScript(src) {
-        return new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.type = 'module';
-          script.src = src;
-          script.onload = () => resolve();
-          script.onerror = (e) => {
-            console.error(`Failed to load module: ${src}`, e);
-            reject(e);
-          };
-          document.head.appendChild(script);
-        });
-      }
-      
-      // Load all required modules
-      Promise.all([
-        loadModuleScript('./dealForm.js'),
-        loadModuleScript('./historyTracker.js'),
-        loadModuleScript('./emailReports.js'),
-        loadModuleScript('./exportData.js')
-      ]).catch(error => {
-        console.error('Error loading module scripts:', error);
+        if (window.feather && typeof window.feather.replace === "function") {
+          window.feather.replace();
+        }
       });
     </script>
 
