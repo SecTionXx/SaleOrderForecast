@@ -799,6 +799,100 @@ function initializeCharts(salesRepColors, chartColors) {
       },
     })
   }
+
+  // --- 7. Win/Loss Reason Analysis Chart ---
+  const winLossReasonCtx = document.getElementById("winLossReasonChart")
+  if (winLossReasonCtx) {
+    charts.winLossReasonChart = new Chart(winLossReasonCtx.getContext("2d"), {
+      type: "pie",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "Loss Reason (Closed Lost)",
+            data: [],
+            backgroundColor: [
+              enhancedPalette.red[0],
+              enhancedPalette.amber[0],
+              enhancedPalette.blue[0],
+              enhancedPalette.purple[0],
+              enhancedPalette.green[0],
+              enhancedPalette.indigo[0],
+              enhancedPalette.orange[0],
+              enhancedPalette.emerald[0],
+            ],
+            borderWidth: 2,
+            borderColor: "#fff",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: "right",
+            labels: {
+              boxWidth: 15,
+              padding: 15,
+              usePointStyle: true,
+              font: { size: 13, weight: "500" },
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                let label = context.label || ""
+                if (label) label += ": "
+                const value = context.parsed
+                const total = context.chart.data.datasets[0].data.reduce(
+                  (a, b) => a + b,
+                  0
+                )
+                const percentage =
+                  total > 0 ? ((value / total) * 100).toFixed(1) + "%" : "0%"
+                label += `${value} (${percentage})`
+                return label
+              },
+            },
+            padding: 12,
+            titleFont: { size: 14 },
+            bodyFont: { size: 13 },
+          },
+          datalabels: {
+            display: function (context) {
+              const total = context.chart.data.datasets[0].data.reduce(
+                (a, b) => a + b,
+                0
+              )
+              return context.dataset.data[context.dataIndex] / total > 0.05
+            },
+            formatter: (value, ctx) => {
+              if (value <= 0) return null
+              let sum = 0
+              let dataArr = ctx.chart.data.datasets[0].data
+              dataArr.forEach((data) => {
+                sum += data
+              })
+              let percentage =
+                sum > 0 ? ((value * 100) / sum).toFixed(1) + "%" : "0%"
+              return percentage
+            },
+            color: "#fff",
+            font: { weight: "bold", size: 14 },
+            anchor: "center",
+            align: "center",
+          },
+        },
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 1200,
+        },
+      },
+    })
+  }
 }
 
 export { initializeCharts, charts, enhancedPalette }

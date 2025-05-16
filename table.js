@@ -340,8 +340,11 @@ function createActionButtons(dealId) {
       <button class="action-button action-button-view" title="View Details">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
       </button>
-      <button class="action-button action-button-edit" title="Edit">
+      <button class="action-button action-button-edit edit-deal-btn" title="Edit Deal">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+      </button>
+      <button class="action-button action-button-history view-history-btn" title="View History">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
       </button>
       <button class="action-button action-button-comment" title="Comment">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
@@ -351,13 +354,16 @@ function createActionButtons(dealId) {
 }
 
 // --- Table Row Generator with Improved Styling ---
-function generateTableRow(item) {
+function generateTableRow(item, options = {}) {
   // Handle missing data gracefully
   if (!item) return ""
 
+  // Extract options
+  const { stageBadgeClass, displayCloseDate, ageDays, pastDueClass } = options;
+
   // Generate HTML for each cell with proper formatting
   return `
-    <tr data-deal-id="${item.id || ""}" 
+    <tr class="${pastDueClass || ''}" data-deal-id="${item.dealId || ""}" 
         data-date-created="${item.dateCreated || ""}" 
         data-last-updated="${item.lastUpdated || ""}"
         data-notes="${item.notes || ""}">

@@ -1,9 +1,39 @@
-# SaleOrderForecast
+# Sales Order Forecast Dashboard
 
 ## Project Structure
 
-- `index.html`, `style.css`, `script.js`, `data.js`, `mockData.js`: Frontend files
-- `api/getSheetData.js`: Serverless backend function (Vercel API route)
+### Frontend
+- `index.html`: Main application entry point
+- `login.html`: Authentication page
+
+### CSS (Modular Structure)
+- `css/variables.css`: CSS variables and theme settings
+- `css/layout.css`: Base layout styles
+- `css/components.css`: UI component styles
+- `css/table.css`: Table-specific styles
+- `css/filters.css`: Filter section styles
+- `css/charts.css`: Chart-specific styles
+- `css/utilities.css`: Utility classes
+- `css/modal.css`: Modal component styles
+- `css/dashboardCustomization.css`: Dashboard customization features
+- `css/dealForm.css`: Deal form styles
+- `css/historyTracker.css`: History tracking functionality
+
+### JavaScript (Modular Structure)
+- `js/index.js`: Main JavaScript entry point
+- `js/core/app.js`: Core application logic
+- `js/auth/auth.js`: Authentication handling
+- `js/utils/logger.js`: Logging utilities
+- `js/utils/uiHelpers.js`: UI helper functions
+- `js/utils/dataFetch.js`: Data fetching and caching
+- `js/components/table.js`: Table component
+- `js/components/filters.js`: Filters component
+- `js/charts/charts.js`: Charts functionality
+
+### Backend
+- `api/getSheetData.js`: Data retrieval API
+- `api/auth/`: Authentication endpoints
+- `server.js`: Local development server
 - `.env`: Local environment variables (not committed)
 
 ## Local Development

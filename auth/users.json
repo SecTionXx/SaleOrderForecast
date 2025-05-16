@@ -1,0 +1,22 @@
+[
+  {
+    "id": "1",
+    "username": "admin",
+    "passwordHash": "9f9c93dccff9c86fac6cfdb45d912de224298d06c39b80994dda078d893a691efd3ebd07fd6391b48a47d381ba9ac52df57dbeb8184651719c39057f7e6543ea",
+    "salt": "default-salt-12345",
+    "role": "admin",
+    "name": "Administrator",
+    "email": "admin@example.com",
+    "lastLogin": "2025-05-16T03:08:15.408Z"
+  },
+  {
+    "id": "2",
+    "username": "user",
+    "passwordHash": "e03a7a9d00a05136f3ddf44f0d404fa884aab42500f6f9f2ad57e803e4f5d5699d76354fe52982cfba3f7a73c0b5bd7c84b3c7191259fcc51a5e948bcfb0ad00",
+    "salt": "default-salt-12345",
+    "role": "viewer",
+    "name": "Regular User",
+    "email": "user@example.com",
+    "lastLogin": null
+  }
+]
