@@ -1,0 +1,648 @@
+[2025-05-18T12:37:13.833Z] Server running on http://localhost:3005
+[2025-05-18T12:37:13.836Z] Application configuration: [object Object]
+[2025-05-18T12:37:13.837Z] Testing Google Sheets connection...
+[2025-05-18T12:37:13.837Z] Fetching data from Google Sheets...
+[2025-05-18T12:37:14.624Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:37:15.016Z] Found 12 data rows
+[2025-05-18T12:37:15.018Z] Successfully connected to Google Sheets. Found 12 rows.
+[2025-05-18T12:37:15.018Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}
+[2025-05-18T12:38:04.577Z] 2025-05-18T12:38:04.577Z - GET /api/sheet-data
+[2025-05-18T12:38:04.581Z] Fetching data from Google Sheets...
+[2025-05-18T12:38:04.581Z] Fetching data from Google Sheets...
+[2025-05-18T12:38:05.073Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:38:05.468Z] Found 12 data rows
+[2025-05-18T12:38:05.469Z] Successfully fetched 12 rows
+[2025-05-18T12:38:26.867Z] 2025-05-18T12:38:26.867Z - GET /
+[2025-05-18T12:38:26.919Z] 2025-05-18T12:38:26.919Z - GET /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:38:26.922Z] 404 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:38:26.955Z] 2025-05-18T12:38:26.955Z - GET /style.css
+[2025-05-18T12:38:26.959Z] 2025-05-18T12:38:26.959Z - GET /script.js
+[2025-05-18T12:38:27.218Z] 2025-05-18T12:38:27.218Z - GET /login.html
+[2025-05-18T12:38:27.525Z] 2025-05-18T12:38:27.525Z - GET /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:38:27.527Z] 404 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:38:27.540Z] 2025-05-18T12:38:27.540Z - GET /style.css
+[2025-05-18T12:38:27.543Z] 2025-05-18T12:38:27.543Z - GET /login.js
+[2025-05-18T12:38:27.668Z] 2025-05-18T12:38:27.668Z - GET /favicon.ico
+[2025-05-18T12:38:27.669Z] 404 Not Found: /favicon.ico
+[2025-05-18T12:38:32.556Z] 2025-05-18T12:38:32.556Z - GET /index.html
+[2025-05-18T12:38:32.656Z] 2025-05-18T12:38:32.656Z - GET /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:38:32.658Z] 404 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:38:32.685Z] 2025-05-18T12:38:32.685Z - GET /style.css
+[2025-05-18T12:38:32.698Z] 2025-05-18T12:38:32.698Z - GET /script.js
+[2025-05-18T12:38:33.205Z] 2025-05-18T12:38:33.205Z - GET /data.js
+[2025-05-18T12:38:33.323Z] 2025-05-18T12:38:33.323Z - GET /api/getSheetData
+[2025-05-18T12:38:33.324Z] Received request to /api/getSheetData
+[2025-05-18T12:38:33.324Z] Fetching data from Google Sheets...
+[2025-05-18T12:38:33.488Z] 2025-05-18T12:38:33.488Z - GET /favicon.ico
+[2025-05-18T12:38:33.490Z] 404 Not Found: /favicon.ico
+[2025-05-18T12:38:33.834Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:38:34.230Z] Found 12 data rows
+[2025-05-18T12:38:34.232Z] Raw data from getRows(): [
+  {
+    "Deal_ID": "DEAL-001",
+    "Date_Created": "2025-01-14",
+    "Customer_Name": "Green Yellow",
+    "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+    "Total_Value": 8500000,
+    "Probability_Percent": 100,
+    "Weighted_Value": 8500000,
+    "Deal_Stage": "Closed Won",
+    "Expected_Close_Date": "2025-03-30",
+    "Sales_Rep": "Boworn",
+    "Last_Updated": "2025-10-04",
+    "Notes": "",
+    "actualCloseDate": "2025-03-30"
+  },
+  {
+    "Deal_ID": "DEAL-002",
+    "Date_Created": "2025-02-09",
+    "Customer_Name": "Green Yellow",
+    "Project_Name": "Hilton Garden Inn Silom Chiller 400 RT",
+    "Total_Value": 9800000,
+    "Probability_Percent": 100,
+    "Weighted_Value": 9800000,
+    "Deal_Stage": "Closed Won",
+    "Expected_Close_Date": "2025-06-30",
+    "Sales_Rep": "Lalipas",
+    "Last_Updated": "2025-04-27",
+    "Notes": "",
+    "actualCloseDate": "2025-01-06"
+  },
+  {
+    "Deal_ID": "DEAL-003",
+    "Date_Created": "2025-02-09",
+    "Customer_Name": "Green Yellow",
+    "Project_Name": "Fourpoint By Sheraton Chiller 400 RT",
+    "Total_Value": 8500000,
+    "Probability_Percent": 100,
+    "Weighted_Value": 8500000,
+    "Deal_Stage": "Closed Won",
+    "Expected_Close_Date": "2025-03-30",
+    "Sales_Rep": "Boworn",
+    "Last_Updated": "2025-04-27",
+    "Notes": "",
+    "actualCloseDate": "2025-03-30"
+  },
+  {
+    "Deal_ID": "DEAL-004",
+    "Date_Created": "2025-02-09",
+    "Customer_Name": "Mario Tech",
+    "Project_Name": "Hilton Garden Inn Silom Chiller CPMS",
+    "Total_Value": 1200000,
+    "Probability_Percent": 100,
+    "Weighted_Value": 1200000,
+    "Deal_Stage": "Closed Won",
+    "Expected_Close_Date": "2025-06-29",
+    "Sales_Rep": "Lalipas",
+    "Last_Updated": "2025-04-27",
+    "Notes": "",
+    "actualCloseDate": ""
+  },
+  {
+    "Deal_ID": "DEAL-005",
+    "Date_Created": "2025-04-27",
+    "Customer_Name": "Grande Ville Hotel",
+    "Project_Name": "Grande Ville Hotel",
+    "Total_Value": 35000000,
+    "Probability_Percent": 50,
+    "Weighted_Value": 17500000,
+    "Deal_Stage": "Negotiation",
+    "Expected_Close_Date": "2025-05-29",
+    "Sales_Rep": "Lalipas",
+    "Last_Updated": "2025-04-27",
+    "Notes": "",
+    "actualCloseDate": ""
+  },
+  {
+    "Deal_ID": "DEAL-006",
+    "Date_Created": "2025-04-27",
+    "Customer_Name": "Siam Piwat",
+    "Project_Name": "SPD 13",
+    "Total_Value": 10450000,
+    "Probability_Percent": 50,
+    "Weighted_Value": 5225000,
+    "Deal_Stage": "Negotiation",
+    "Expected_Close_Date": "2025-04-30",
+    "Sales_Rep": "Boworn",
+    "Last_Updated": "2025-04-27",
+    "Notes": "",
+    "actualCloseDate": ""
+  },
+  {
+    "Deal_ID": "DEAL-007",
+    "Date_Created": "2025-04-27",
+    "Customer_Name": "BNSP",
+    "Project_Name": "Mariott Sathorn",
+    "Total_Value": 75000000,
+    "Probability_Percent": 25,
+    "Weighted_Value": 18750000,
+    "Deal_Stage": "Proposal Sent",
+    "Expected_Close_Date": "2025-06-29",
+    "Sales_Rep": "Boworn",
+    "Last_Updated": "2025-04-27",
+    "Notes": "",
+    "actualCloseDate": ""
+  },
+  {
+    "Deal_ID": "DEAL-008",
+    "Date_Created": "2025-04-27",
+    "Customer_Name": "Mario Tech",
+    "Project_Name": "Holiday Inn Sukhumvit CPMS",
+    "Total_Value": 1200000,
+    "Probability_Percent": 25,
+    "Weighted_Value": 300000,
+    "Deal_Stage": "Lead",
+    "Expected_Close_Date": "2025-05-29",
+    "Sales_Rep": "Lalipas",
+    "Last_Updated": "2025-04-27",
+    "Notes": "",
+    "actualCloseDate": ""
+  },
+  {
+    "Deal_ID": "DEAL-009",
+    "Date_Created": "2025-04-27",
+    "Customer_Name": "Mario Tech",
+    "Project_Name": "Fourpoint By Sheraton CPMS",
+    "Total_Value": 1200000,
+    "Probability_Percent": 25,
+    "Weighted_Value": 300000,
+    "Deal_Stage": "Lead",
+    "Expected_Close_Date": "2025-05-29",
+    "Sales_Rep": "Lalipas",
+    "Last_Updated": "2025-04-27",
+    "Notes": "",
+    "actualCloseDate": ""
+  },
+  {
+    "Deal_ID": "DEAL-010",
+    "Date_Created": "2025-04-27",
+    "Customer_Name": "Proud",
+    "Project_Name": "Intercon Hua Hin High Efficiency Pump Replacement",
+    "Total_Value": 2300000,
+    "Probability_Percent": 100,
+    "Weighted_Value": 2300000,
+    "Deal_Stage": "Closed Won",
+    "Expected_Close_Date": "2025-04-14",
+    "Sales_Rep": "Lalipas",
+    "Last_Updated": "2025-04-14",
+    "Notes": "",
+    "actualCloseDate": "2025-04-14"
+  },
+  {
+    "Deal_ID": "DEAL-011",
+    "Date_Created": "2025-04-27",
+    "Customer_Name": "",
+    "Project_Name": "Pullman Khonkean",
+    "Total_Value": 20000000,
+    "Probability_Percent": 0,
+    "Weighted_Value": 0,
+    "Deal_Stage": "Closed Lost\t",
+    "Expected_Close_Date": "2025-03-29",
+    "Sales_Rep": "Lalipas",
+    "Last_Updated": "2025-04-27",
+    "Notes": "",
+    "actualCloseDate": "2025-03-29"
+  },
+  {
+    "Deal_ID": "DEAL-012",
+    "Date_Created": "2025-04-27",
+    "Customer_Name": "BNSP",
+    "Project_Name": "Centara HuaHin",
+    "Total_Value": 35000000,
+    "Probability_Percent": 0,
+    "Weighted_Value": 0,
+    "Deal_Stage": "Closed Lost\t",
+    "Expected_Close_Date": "2025-03-29",
+    "Sales_Rep": "Lalipas",
+    "Last_Updated": "2025-04-27",
+    "Notes": "",
+    "actualCloseDate": "2025-03-29"
+  }
+]
+[2025-05-18T12:38:34.234Z] Sending 12 rows of data
+[2025-05-18T12:38:34.235Z] Sample transformed data: {
+  "0": "DEAL-1",
+  "1": "",
+  "2": "N/A",
+  "3": "N/A",
+  "4": 0,
+  "5": 0,
+  "6": 0,
+  "7": "Unknown",
+  "8": "",
+  "9": "Unknown",
+  "10": "2025-05-18",
+  "11": "",
+  "12": "2025-03-30"
+}
+[2025-05-18T12:43:08.317Z] Server running on http://localhost:3005
+[2025-05-18T12:43:08.319Z] Application configuration: [object Object]
+[2025-05-18T12:43:08.320Z] Testing Google Sheets connection...
+[2025-05-18T12:43:08.320Z] Fetching data from Google Sheets...
+[2025-05-18T12:43:08.953Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:43:09.343Z] Found 12 data rows
+[2025-05-18T12:43:09.345Z] Successfully connected to Google Sheets. Found 12 rows.
+[2025-05-18T12:43:09.345Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}
+[2025-05-18T12:45:19.176Z] Server running on http://localhost:3000
+[2025-05-18T12:45:19.178Z] Application configuration: [object Object]
+[2025-05-18T12:45:19.179Z] Testing Google Sheets connection...
+[2025-05-18T12:45:19.180Z] Fetching data from Google Sheets...
+[2025-05-18T12:45:19.674Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:45:20.064Z] Found 12 data rows
+[2025-05-18T12:45:20.066Z] Successfully connected to Google Sheets. Found 12 rows.
+[2025-05-18T12:45:20.066Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}
+[2025-05-18T12:49:11.280Z] Server running on http://localhost:3000
+[2025-05-18T12:49:11.282Z] Application configuration: [object Object]
+[2025-05-18T12:49:11.283Z] Testing Google Sheets connection...
+[2025-05-18T12:49:11.284Z] Fetching data from Google Sheets...
+[2025-05-18T12:49:11.983Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:49:12.379Z] Found 12 data rows
+[2025-05-18T12:49:12.380Z] Successfully connected to Google Sheets. Found 12 rows.
+[2025-05-18T12:49:12.381Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}
+[2025-05-18T12:49:23.346Z] 2025-05-18T12:49:23.346Z - GET /api/sheet-data
+[2025-05-18T12:49:23.350Z] Fetching data from Google Sheets...
+[2025-05-18T12:49:23.351Z] Fetching data from Google Sheets...
+[2025-05-18T12:49:23.844Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:49:24.238Z] Found 12 data rows
+[2025-05-18T12:49:24.238Z] Successfully fetched 12 rows
+[2025-05-18T12:50:42.382Z] Server running on http://localhost:3000
+[2025-05-18T12:50:42.384Z] Application configuration: [object Object]
+[2025-05-18T12:50:42.385Z] Testing Google Sheets connection...
+[2025-05-18T12:50:42.386Z] Fetching data from Google Sheets...
+[2025-05-18T12:50:42.968Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:50:43.384Z] Found 12 data rows
+[2025-05-18T12:50:43.386Z] Successfully connected to Google Sheets. Found 12 rows.
+[2025-05-18T12:50:43.386Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}
+[2025-05-18T12:50:47.957Z] 2025-05-18T12:50:47.957Z - GET /index.html
+[2025-05-18T12:50:48.032Z] 2025-05-18T12:50:48.032Z - GET /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:50:48.035Z] 404 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:50:48.050Z] 2025-05-18T12:50:48.050Z - GET /style.css
+[2025-05-18T12:50:48.053Z] 2025-05-18T12:50:48.053Z - GET /script.js
+[2025-05-18T12:50:48.609Z] 2025-05-18T12:50:48.609Z - GET /data.js
+[2025-05-18T12:50:48.694Z] 2025-05-18T12:50:48.694Z - GET /api/sheet-data
+[2025-05-18T12:50:48.695Z] Fetching data from Google Sheets...
+[2025-05-18T12:50:48.695Z] Fetching data from Google Sheets...
+[2025-05-18T12:50:48.836Z] 2025-05-18T12:50:48.836Z - GET /favicon.ico
+[2025-05-18T12:50:48.838Z] 404 Not Found: /favicon.ico
+[2025-05-18T12:50:49.173Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:50:49.595Z] Found 12 data rows
+[2025-05-18T12:50:49.596Z] Successfully fetched 12 rows
+[2025-05-18T12:56:37.606Z] Server running on http://localhost:3000
+[2025-05-18T12:56:37.610Z] Application configuration: [object Object]
+[2025-05-18T12:56:37.611Z] Testing Google Sheets connection...
+[2025-05-18T12:56:37.611Z] Fetching data from Google Sheets...
+[2025-05-18T12:56:38.363Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:56:38.787Z] Found 12 data rows
+[2025-05-18T12:56:38.789Z] Successfully connected to Google Sheets. Found 12 rows.
+[2025-05-18T12:56:38.790Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}
+[2025-05-18T12:57:07.489Z] 2025-05-18T12:57:07.489Z - GET /index.html
+[2025-05-18T12:57:07.563Z] 2025-05-18T12:57:07.563Z - GET /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:57:07.567Z] 404 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:57:07.619Z] 2025-05-18T12:57:07.618Z - GET /style.css
+[2025-05-18T12:57:07.626Z] 2025-05-18T12:57:07.626Z - GET /script.js
+[2025-05-18T12:57:08.206Z] 2025-05-18T12:57:08.206Z - GET /data.js
+[2025-05-18T12:57:08.330Z] 2025-05-18T12:57:08.330Z - GET /api/sheet-data
+[2025-05-18T12:57:08.332Z] Fetching data from Google Sheets...
+[2025-05-18T12:57:08.333Z] Fetching data from Google Sheets...
+[2025-05-18T12:57:08.473Z] 2025-05-18T12:57:08.473Z - GET /favicon.ico
+[2025-05-18T12:57:08.475Z] 404 Not Found: /favicon.ico
+[2025-05-18T12:57:08.834Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:57:09.232Z] Found 12 data rows
+[2025-05-18T12:57:09.234Z] Successfully fetched 12 rows
+[2025-05-18T12:57:11.350Z] 2025-05-18T12:57:11.350Z - GET /login.html
+[2025-05-18T12:57:11.424Z] 2025-05-18T12:57:11.424Z - GET /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:57:11.427Z] 404 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:57:11.454Z] 2025-05-18T12:57:11.454Z - GET /style.css
+[2025-05-18T12:57:11.456Z] 2025-05-18T12:57:11.456Z - GET /login.js
+[2025-05-18T12:57:11.584Z] 2025-05-18T12:57:11.584Z - GET /favicon.ico
+[2025-05-18T12:57:11.586Z] 404 Not Found: /favicon.ico
+[2025-05-18T12:57:12.438Z] 2025-05-18T12:57:12.438Z - GET /index.html
+[2025-05-18T12:57:12.510Z] 2025-05-18T12:57:12.510Z - GET /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:57:12.511Z] 404 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:57:12.547Z] 2025-05-18T12:57:12.547Z - GET /style.css
+[2025-05-18T12:57:12.551Z] 2025-05-18T12:57:12.551Z - GET /script.js
+[2025-05-18T12:57:13.043Z] 2025-05-18T12:57:13.043Z - GET /data.js
+[2025-05-18T12:57:13.127Z] 2025-05-18T12:57:13.127Z - GET /api/sheet-data
+[2025-05-18T12:57:13.128Z] Fetching data from Google Sheets...
+[2025-05-18T12:57:13.129Z] Fetching data from Google Sheets...
+[2025-05-18T12:57:13.242Z] 2025-05-18T12:57:13.242Z - GET /favicon.ico
+[2025-05-18T12:57:13.244Z] 404 Not Found: /favicon.ico
+[2025-05-18T12:57:13.511Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:57:13.824Z] Found 12 data rows
+[2025-05-18T12:57:13.825Z] Successfully fetched 12 rows
+[2025-05-18T12:58:33.035Z] 2025-05-18T12:58:33.035Z - GET /index.html
+[2025-05-18T12:58:33.102Z] 2025-05-18T12:58:33.102Z - GET /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:58:33.103Z] 404 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:58:33.137Z] 2025-05-18T12:58:33.137Z - GET /style.css
+[2025-05-18T12:58:33.140Z] 2025-05-18T12:58:33.140Z - GET /script.js
+[2025-05-18T12:58:33.620Z] 2025-05-18T12:58:33.620Z - GET /data.js
+[2025-05-18T12:58:33.703Z] 2025-05-18T12:58:33.703Z - GET /api/sheet-data
+[2025-05-18T12:58:33.704Z] Fetching data from Google Sheets...
+[2025-05-18T12:58:33.704Z] Fetching data from Google Sheets...
+[2025-05-18T12:58:33.850Z] 2025-05-18T12:58:33.849Z - GET /favicon.ico
+[2025-05-18T12:58:33.852Z] 404 Not Found: /favicon.ico
+[2025-05-18T12:58:34.201Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:58:34.600Z] Found 12 data rows
+[2025-05-18T12:58:34.601Z] Successfully fetched 12 rows
+[2025-05-18T12:59:03.938Z] Server running on http://localhost:3000
+[2025-05-18T12:59:03.941Z] Application configuration: [object Object]
+[2025-05-18T12:59:03.942Z] Testing Google Sheets connection...
+[2025-05-18T12:59:03.942Z] 
+=== GoogleSheetsHelper.getRows() called ===
+[2025-05-18T12:59:03.943Z] Spreadsheet ID: 1Cx8eCZH9HafVPcP0t78nP-3nRtYmL_hJXRBcf6DhxHE
+[2025-05-18T12:59:03.943Z] API Key: Set
+[2025-05-18T12:59:03.943Z] 
+Fetching headers from Google Sheets...
+[2025-05-18T12:59:04.567Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:59:04.568Z] 
+Fetching data rows from Google Sheets...
+[2025-05-18T12:59:04.955Z] Found 12 data rows
+[2025-05-18T12:59:04.956Z] First row data: DEAL-001,1/15/2025,Green Yellow,Holiday Inn Sukhumvit Chiller 400 RT,฿8,500,000.00,100,฿8,500,000.00,Closed Won,3/31/2025,Boworn,10/5/2025,,3/31/2025
+[2025-05-18T12:59:04.958Z] Successfully connected to Google Sheets. Found 12 rows.
+[2025-05-18T12:59:04.958Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}
+[2025-05-18T12:59:14.049Z] 2025-05-18T12:59:14.049Z - GET /index.html
+[2025-05-18T12:59:14.120Z] 2025-05-18T12:59:14.120Z - GET /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:59:14.122Z] 404 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2025-05-18T12:59:14.149Z] 2025-05-18T12:59:14.149Z - GET /style.css
+[2025-05-18T12:59:14.153Z] 2025-05-18T12:59:14.153Z - GET /script.js
+[2025-05-18T12:59:14.615Z] 2025-05-18T12:59:14.615Z - GET /data.js
+[2025-05-18T12:59:14.701Z] 2025-05-18T12:59:14.701Z - GET /api/sheet-data
+[2025-05-18T12:59:14.703Z] 
+=== /api/sheet-data endpoint called ===
+[2025-05-18T12:59:14.704Z] Environment variables:
+[2025-05-18T12:59:14.704Z] - GOOGLE_SHEET_ID: Set
+[2025-05-18T12:59:14.704Z] - GOOGLE_SHEETS_API_KEY: Set
+[2025-05-18T12:59:14.704Z] 
+Fetching data from Google Sheets...
+[2025-05-18T12:59:14.705Z] 
+=== GoogleSheetsHelper.getRows() called ===
+[2025-05-18T12:59:14.705Z] Spreadsheet ID: 1Cx8eCZH9HafVPcP0t78nP-3nRtYmL_hJXRBcf6DhxHE
+[2025-05-18T12:59:14.705Z] API Key: Set
+[2025-05-18T12:59:14.706Z] 
+Fetching headers from Google Sheets...
+[2025-05-18T12:59:14.849Z] 2025-05-18T12:59:14.849Z - GET /favicon.ico
+[2025-05-18T12:59:14.851Z] 404 Not Found: /favicon.ico
+[2025-05-18T12:59:15.198Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:59:15.199Z] 
+Fetching data rows from Google Sheets...
+[2025-05-18T12:59:15.603Z] Found 12 data rows
+[2025-05-18T12:59:15.604Z] First row data: DEAL-001,1/15/2025,Green Yellow,Holiday Inn Sukhumvit Chiller 400 RT,฿8,500,000.00,100,฿8,500,000.00,Closed Won,3/31/2025,Boworn,10/5/2025,,3/31/2025
+[2025-05-18T12:59:15.605Z] 
+Successfully fetched 12 rows
+[2025-05-18T12:59:15.606Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}
+[2025-05-18T12:59:18.146Z] 2025-05-18T12:59:18.146Z - GET /api/sheet-data
+[2025-05-18T12:59:18.147Z] 
+=== /api/sheet-data endpoint called ===
+[2025-05-18T12:59:18.148Z] Environment variables:
+[2025-05-18T12:59:18.148Z] - GOOGLE_SHEET_ID: Set
+[2025-05-18T12:59:18.148Z] - GOOGLE_SHEETS_API_KEY: Set
+[2025-05-18T12:59:18.148Z] 
+Fetching data from Google Sheets...
+[2025-05-18T12:59:18.149Z] 
+=== GoogleSheetsHelper.getRows() called ===
+[2025-05-18T12:59:18.149Z] Spreadsheet ID: 1Cx8eCZH9HafVPcP0t78nP-3nRtYmL_hJXRBcf6DhxHE
+[2025-05-18T12:59:18.149Z] API Key: Set
+[2025-05-18T12:59:18.149Z] 
+Fetching headers from Google Sheets...
+[2025-05-18T12:59:18.543Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:59:18.544Z] 
+Fetching data rows from Google Sheets...
+[2025-05-18T12:59:18.935Z] Found 12 data rows
+[2025-05-18T12:59:18.936Z] First row data: DEAL-001,1/15/2025,Green Yellow,Holiday Inn Sukhumvit Chiller 400 RT,฿8,500,000.00,100,฿8,500,000.00,Closed Won,3/31/2025,Boworn,10/5/2025,,3/31/2025
+[2025-05-18T12:59:18.937Z] 
+Successfully fetched 12 rows
+[2025-05-18T12:59:18.937Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}
+[2025-05-18T12:59:24.997Z] 2025-05-18T12:59:24.997Z - GET /api/sheet-data
+[2025-05-18T12:59:24.999Z] 
+=== /api/sheet-data endpoint called ===
+[2025-05-18T12:59:24.999Z] Environment variables:
+[2025-05-18T12:59:24.999Z] - GOOGLE_SHEET_ID: Set
+[2025-05-18T12:59:24.999Z] - GOOGLE_SHEETS_API_KEY: Set
+[2025-05-18T12:59:25.000Z] 
+Fetching data from Google Sheets...
+[2025-05-18T12:59:25.000Z] 
+=== GoogleSheetsHelper.getRows() called ===
+[2025-05-18T12:59:25.000Z] Spreadsheet ID: 1Cx8eCZH9HafVPcP0t78nP-3nRtYmL_hJXRBcf6DhxHE
+[2025-05-18T12:59:25.000Z] API Key: Set
+[2025-05-18T12:59:25.001Z] 
+Fetching headers from Google Sheets...
+[2025-05-18T12:59:25.486Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:59:25.487Z] 
+Fetching data rows from Google Sheets...
+[2025-05-18T12:59:25.882Z] Found 12 data rows
+[2025-05-18T12:59:25.882Z] First row data: DEAL-001,1/15/2025,Green Yellow,Holiday Inn Sukhumvit Chiller 400 RT,฿8,500,000.00,100,฿8,500,000.00,Closed Won,3/31/2025,Boworn,10/5/2025,,3/31/2025
+[2025-05-18T12:59:25.883Z] 
+Successfully fetched 12 rows
+[2025-05-18T12:59:25.884Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}
+[2025-05-18T12:59:32.211Z] 2025-05-18T12:59:32.211Z - GET /api/sheet-data
+[2025-05-18T12:59:32.212Z] 
+=== /api/sheet-data endpoint called ===
+[2025-05-18T12:59:32.212Z] Environment variables:
+[2025-05-18T12:59:32.212Z] - GOOGLE_SHEET_ID: Set
+[2025-05-18T12:59:32.213Z] - GOOGLE_SHEETS_API_KEY: Set
+[2025-05-18T12:59:32.213Z] 
+Fetching data from Google Sheets...
+[2025-05-18T12:59:32.213Z] 
+=== GoogleSheetsHelper.getRows() called ===
+[2025-05-18T12:59:32.213Z] Spreadsheet ID: 1Cx8eCZH9HafVPcP0t78nP-3nRtYmL_hJXRBcf6DhxHE
+[2025-05-18T12:59:32.214Z] API Key: Set
+[2025-05-18T12:59:32.214Z] 
+Fetching headers from Google Sheets...
+[2025-05-18T12:59:32.677Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:59:32.678Z] 
+Fetching data rows from Google Sheets...
+[2025-05-18T12:59:33.075Z] Found 12 data rows
+[2025-05-18T12:59:33.076Z] First row data: DEAL-001,1/15/2025,Green Yellow,Holiday Inn Sukhumvit Chiller 400 RT,฿8,500,000.00,100,฿8,500,000.00,Closed Won,3/31/2025,Boworn,10/5/2025,,3/31/2025
+[2025-05-18T12:59:33.077Z] 
+Successfully fetched 12 rows
+[2025-05-18T12:59:33.077Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}
+[2025-05-18T12:59:45.503Z] 2025-05-18T12:59:45.503Z - GET /api/sheet-data
+[2025-05-18T12:59:45.504Z] 
+=== /api/sheet-data endpoint called ===
+[2025-05-18T12:59:45.505Z] Environment variables:
+[2025-05-18T12:59:45.505Z] - GOOGLE_SHEET_ID: Set
+[2025-05-18T12:59:45.505Z] - GOOGLE_SHEETS_API_KEY: Set
+[2025-05-18T12:59:45.505Z] 
+Fetching data from Google Sheets...
+[2025-05-18T12:59:45.506Z] 
+=== GoogleSheetsHelper.getRows() called ===
+[2025-05-18T12:59:45.506Z] Spreadsheet ID: 1Cx8eCZH9HafVPcP0t78nP-3nRtYmL_hJXRBcf6DhxHE
+[2025-05-18T12:59:45.506Z] API Key: Set
+[2025-05-18T12:59:45.506Z] 
+Fetching headers from Google Sheets...
+[2025-05-18T12:59:45.994Z] Headers found: Deal_ID,Date_Created,Customer_Name,Project_Name,Total_Value,Probability_Percent,Weighted_Value,Deal_Stage,Expected_Close_Date,Sales_Rep,Last_Updated,Notes,actualCloseDate
+[2025-05-18T12:59:45.995Z] 
+Fetching data rows from Google Sheets...
+[2025-05-18T12:59:46.388Z] Found 12 data rows
+[2025-05-18T12:59:46.388Z] First row data: DEAL-001,1/15/2025,Green Yellow,Holiday Inn Sukhumvit Chiller 400 RT,฿8,500,000.00,100,฿8,500,000.00,Closed Won,3/31/2025,Boworn,10/5/2025,,3/31/2025
+[2025-05-18T12:59:46.389Z] 
+Successfully fetched 12 rows
+[2025-05-18T12:59:46.390Z] Sample row: {
+  "Deal_ID": "DEAL-001",
+  "Date_Created": "2025-01-14",
+  "Customer_Name": "Green Yellow",
+  "Project_Name": "Holiday Inn Sukhumvit Chiller 400 RT",
+  "Total_Value": 8500000,
+  "Probability_Percent": 100,
+  "Weighted_Value": 8500000,
+  "Deal_Stage": "Closed Won",
+  "Expected_Close_Date": "2025-03-30",
+  "Sales_Rep": "Boworn",
+  "Last_Updated": "2025-10-04",
+  "Notes": "",
+  "actualCloseDate": "2025-03-30"
+}

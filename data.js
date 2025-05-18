@@ -1,7 +1,7 @@
 // data.js
 
 // --- Use backend API endpoint ---
-const BACKEND_API_URL = "/api/getSheetData"
+const BACKEND_API_URL = "/api/sheet-data"
 
 /**
  * Converts a Google Sheet/Excel serial number date to a JavaScript Date object.
@@ -23,6 +23,7 @@ async function fetchDataFromSheet() {
     const response = await fetch(BACKEND_API_URL)
     const data = await response.json()
     console.log("data.js: Backend Response Status:", response.status)
+    console.log("data.js: Response data:", data)
 
     if (!response.ok) {
       const errorMessage =
@@ -30,49 +31,93 @@ async function fetchDataFromSheet() {
       console.error("data.js: Backend API Error:", errorMessage)
       throw new Error(errorMessage)
     }
-    if (
-      !data.values ||
-      !Array.isArray(data.values) ||
-      data.values.length === 0
-    ) {
+    
+    if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
       console.warn("data.js: No data rows found in backend response.")
       return []
     }
-    console.log(`data.js: Processing ${data.values.length} rows from backend.`)
+    
+    console.log(`data.js: Processing ${data.data.length} rows from backend.`)
 
     // --- Data Transformation ---
-    return data.values.map((row, index) => {
-      const totalValue = parseFloat(row[4]) || 0
-      const probabilityPercent = parseFloat(row[5]) || 0
-      const weightedValue =
-        parseFloat(row[6]) || (totalValue * probabilityPercent) / 100
+    console.log('Processing rows. First row sample:', JSON.stringify(data.data[0], null, 2));
+    
+    return data.data.map((row, index) => {
+      console.log(`Processing row ${index}:`, JSON.stringify(row, null, 2));
+      
+      const totalValue = typeof row.Total_Value === 'number' ? row.Total_Value : 0;
+      const probabilityPercent = typeof row.Probability_Percent === 'number' ? row.Probability_Percent : 0;
+      const weightedValue = typeof row.Weighted_Value === 'number' ? row.Weighted_Value : (totalValue * probabilityPercent) / 100;
+      
+      console.log(`Row ${index} values - Total: ${totalValue}, Probability: ${probabilityPercent}%, Weighted: ${weightedValue}`);
 
-      const processDateValue = (rawValue) => {
-        if (typeof rawValue === "number" && rawValue > 0)
-          return serialNumberToDate(rawValue)
-        if (typeof rawValue === "string" && rawValue.trim())
-          return rawValue.trim()
-        return null
-      }
-      const dateCreated = processDateValue(row[1])
-      const expectedCloseDate = processDateValue(row[8])
-      const lastUpdated = processDateValue(row[10])
-      const actualCloseDate = processDateValue(row[12])
+      const processDateValue = (dateString, fieldName = '') => {
+        try {
+          if (!dateString) {
+            console.log(`No date provided for ${fieldName}`);
+            return null;
+          }
+          
+          // If it's already a Date object, return it
+          if (dateString instanceof Date) {
+            if (isNaN(dateString.getTime())) {
+              console.warn(`Invalid Date object for ${fieldName}:`, dateString);
+              return null;
+            }
+            return dateString;
+          }
+          
+          // If it's a number, treat it as a serial date
+          if (typeof dateString === 'number' && dateString > 0) {
+            const date = serialNumberToDate(dateString);
+            if (!date) {
+              console.warn(`Failed to convert serial date for ${fieldName}:`, dateString);
+            }
+            return date;
+          }
+          
+          // Try parsing the date string (could be in various formats)
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) {
+            console.warn(`Failed to parse date string for ${fieldName}:`, dateString);
+            return null;
+          }
+          return date;
+        } catch (error) {
+          console.error(`Error processing date for ${fieldName}:`, error);
+          return null;
+        }
+      };
+
+      const dateCreated = processDateValue(row.Date_Created, 'Date_Created');
+      const expectedCloseDate = processDateValue(row.Expected_Close_Date, 'Expected_Close_Date');
+      const lastUpdated = processDateValue(row.Last_Updated, 'Last_Updated');
+      const actualCloseDate = processDateValue(
+        row.actualCloseDate || row.Expected_Close_Date, 
+        'actualCloseDate/Expected_Close_Date'
+      );
+      
+      console.log(`Processed dates for row ${index}:`, {
+        dateCreated,
+        expectedCloseDate,
+        lastUpdated,
+        actualCloseDate
+      });
 
       return {
-        dealId: String(row[0] || `GEN-${index + 1}`).trim(),
-        customerName: String(row[2] || "N/A").trim(),
-        projectName: String(row[3] || "N/A").trim(),
-        dealStage: String(row[7] || "Unknown").trim(),
-        salesRep: String(row[9] || "Unknown").trim(),
-        notes: String(row[11] || "").trim(),
-        totalValue: totalValue,
-        probabilityPercent: probabilityPercent,
-        weightedValue: weightedValue,
-        dateCreated: dateCreated,
-        expectedCloseDate: expectedCloseDate,
-        lastUpdated: lastUpdated,
-        actualCloseDate: actualCloseDate,
+        id: row.Deal_ID || `row-${index + 1}`,
+        dateCreated,
+        customerName: row.Customer_Name || "",
+        projectName: row.Project_Name || "",
+        totalValue,
+        probabilityPercent,
+        weightedValue,
+        dealStage: row.Deal_Stage || "",
+        expectedCloseDate,
+        salesRep: row.Sales_Rep || "",
+        lastUpdated,
+        notes: row.Notes || "",
+        actualCloseDate
       }
     })
   } catch (error) {

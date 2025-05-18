@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Components Demo</title>
+  
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.5;
+      color: #333;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .demo-section {
+      margin-bottom: 3rem;
+      padding: 1.5rem;
+      border: 1px solid #e9ecef;
+      border-radius: 0.25rem;
+    }
+    
+    .demo-section h2 {
+      margin-top: 0;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    .component-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    
+    .component-card {
+      padding: 1.5rem;
+      border: 1px solid #e9ecef;
+      border-radius: 0.25rem;
+    }
+    
+    .component-card h3 {
+      margin-top: 0;
+    }
+    
+    .component-preview {
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 1rem 0;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 0.25rem;
+    }
+    
+    pre {
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 0.25rem;
+      overflow-x: auto;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.875rem;
+    }
+    
+    code {
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #f8f9fa;
+      padding: 0.2rem 0.4rem;
+      border-radius: 0.2rem;
+      font-size: 0.875em;
+    }
+  </style>
+</head>
+<body>
+  <h1>UI Components Demo</h1>
+  
+  <!-- Button Component Demo -->
+  <section class="demo-section">
+    <h2>Button Component</h2>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <h3>Basic Buttons</h3>
+        <div class="component-preview" id="basic-buttons">
+          <!-- Buttons will be rendered here by JavaScript -->
+        </div>
+        <pre><code>// Create a primary button
+const button = new Button({
+  text: 'Click me',
+  variant: 'primary',
+  onClick: () => console.log('Button clicked')
+});
+
+document.getElementById('basic-buttons').appendChild(button.element);</code></pre>
+      </div>
+      
+      <div class="component-card">
+        <h3>Button with Icon</h3>
+        <div class="component-preview" id="icon-buttons">
+          <!-- Buttons will be rendered here by JavaScript -->
+        </div>
+        <pre><code>// Create a button with icon
+const iconBtn = new Button({
+  text: 'Save',
+  icon: 'save',
+  variant: 'success'
+});</code></pre>
+      </div>
+      
+      <div class="component-card">
+        <h3>Button States</h3>
+        <div class="component-preview" id="state-buttons">
+          <!-- Buttons will be rendered here by JavaScript -->
+        </div>
+        <pre><code>// Disabled button
+const disabledBtn = new Button({
+  text: 'Disabled',
+  disabled: true
+});
+
+// Loading button
+const loadingBtn = new Button({
+  text: 'Loading...',
+  variant: 'primary'
+});
+loadingBtn.setLoading(true);</code></pre>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Modal Component Demo -->
+  <section class="demo-section">
+    <h2>Modal Component</h2>
+    
+    <div class="component-card">
+      <h3>Basic Modal</h3>
+      <div class="component-preview">
+        <button id="open-modal-btn" class="btn btn-primary">Open Modal</button>
+      </div>
+      <pre><code>// Create a modal
+const modal = new Modal({
+  title: 'Example Modal',
+  content: 'This is a simple modal dialog.',
+  buttons: [
+    {
+      text: 'Close',
+      variant: 'secondary',
+      onClick: () => console.log('Modal closed')
+    },
+    {
+      text: 'Save Changes',
+      variant: 'primary',
+      onClick: () => console.log('Changes saved')
+    }
+  ]
+});
+
+// Show the modal
+document.getElementById('open-modal-btn').addEventListener('click', () => {
+  modal.show();
+});</code></pre>
+    </div>
+  </section>
+  
+  <!-- Table Component Demo -->
+  <section class="demo-section">
+    <h2>Table Component</h2>
+    
+    <div class="component-card">
+      <h3>Data Table</h3>
+      <div class="component-preview" style="overflow-x: auto;">
+        <div id="table-container">
+          <!-- Table will be rendered here by JavaScript -->
+        </div>
+      </div>
+      <pre><code>// Sample data
+const data = [
+  { id: 1, name: 'John Doe', email: 'john@example.com', status: 'Active' },
+  { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'Inactive' },
+  { id: 3, name: 'Bob Johnson', email: 'bob@example.com', status: 'Active' },
+  { id: 4, name: 'Alice Brown', email: 'alice@example.com', status: 'Pending' }
+];
+
+// Create table
+const table = new Table({
+  columns: [
+    { key: 'id', title: 'ID', sortable: true },
+    { key: 'name', title: 'Name', sortable: true },
+    { key: 'email', title: 'Email' },
+    { 
+      key: 'status', 
+      title: 'Status',
+      render: (value) => {
+        const statusClass = value.toLowerCase();
+        return `<span class="status-badge ${statusClass}">${value}</span>`;
+      }
+    }
+  ],
+  data: data,
+  paginate: true,
+  pageSize: 2
+});
+
+document.getElementById('table-container').appendChild(table.element);</code></pre>
+    </div>
+  </section>
+  
+  <!-- Include the component scripts -->
+  <script type="module">
+    // Import components
+    import { Button, Modal, Table } from '../js/modules/components/index.js';
+    
+    // Button Demos
+    // Basic Buttons
+    const primaryBtn = new Button({
+      text: 'Primary',
+      variant: 'primary',
+      onClick: () => console.log('Primary button clicked')
+    });
+    
+    const secondaryBtn = new Button({
+      text: 'Secondary',
+      variant: 'secondary',
+      onClick: () => console.log('Secondary button clicked')
+    });
+    
+    document.getElementById('basic-buttons').append(primaryBtn.element, secondaryBtn.element);
+    
+    // Icon Buttons
+    const saveBtn = new Button({
+      text: 'Save',
+      icon: 'save',
+      variant: 'success'
+    });
+    
+    const deleteBtn = new Button({
+      text: 'Delete',
+      icon: 'delete',
+      variant: 'danger'
+    });
+    
+    document.getElementById('icon-buttons').append(saveBtn.element, ' ', deleteBtn.element);
+    
+    // State Buttons
+    const disabledBtn = new Button({
+      text: 'Disabled',
+      disabled: true
+    });
+    
+    const loadingBtn = new Button({
+      text: 'Loading...',
+      variant: 'primary'
+    });
+    loadingBtn.setLoading(true);
+    
+    document.getElementById('state-buttons').append(disabledBtn.element, ' ', loadingBtn.element);
+    
+    // Modal Demo
+    const modal = new Modal({
+      title: 'Example Modal',
+      content: 'This is a simple modal dialog. You can add any HTML content here.',
+      buttons: [
+        {
+          text: 'Cancel',
+          variant: 'secondary',
+          onClick: () => console.log('Modal closed')
+        },
+        {
+          text: 'Save Changes',
+          variant: 'primary',
+          onClick: () => {
+            console.log('Changes saved');
+            modal.hide();
+          }
+        }
+      ]
+    });
+    
+    document.getElementById('open-modal-btn').addEventListener('click', () => {
+      modal.show();
+    });
+    
+    // Table Demo
+    const tableData = [
+      { id: 1, name: 'John Doe', email: 'john@example.com', status: 'Active' },
+      { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'Inactive' },
+      { id: 3, name: 'Bob Johnson', email: 'bob@example.com', status: 'Active' },
+      { id: 4, name: 'Alice Brown', email: 'alice@example.com', status: 'Pending' },
+      { id: 5, name: 'Charlie Wilson', email: 'charlie@example.com', status: 'Active' },
+      { id: 6, name: 'Diana Prince', email: 'diana@example.com', status: 'Inactive' }
+    ];
+    
+    const table = new Table({
+      columns: [
+        { key: 'id', title: 'ID', sortable: true, width: '80px' },
+        { key: 'name', title: 'Name', sortable: true },
+        { key: 'email', title: 'Email' },
+        { 
+          key: 'status', 
+          title: 'Status',
+          align: 'center',
+          render: (value) => {
+            const statusClass = value.toLowerCase();
+            return `<span class="status-badge ${statusClass}">${value}</span>`;
+          }
+        }
+      ],
+      data: tableData,
+      paginate: true,
+      pageSize: 3,
+      emptyMessage: 'No records found'
+    });
+    
+    document.getElementById('table-container').appendChild(table.element);
+    
+    // Add some basic styles for the demo
+    const style = document.createElement('style');
+    style.textContent = `
+      .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: capitalize;
+      }
+      
+      .status-badge.active {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      
+      .status-badge.inactive {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+      
+      .status-badge.pending {
+        background-color: #fff3cd;
+        color: #856404;
+      }
+      
+      .btn {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

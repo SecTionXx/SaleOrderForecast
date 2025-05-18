@@ -1,0 +1,46 @@
+{
+  "values": [
+    {
+      "dealId": "DEAL-001",
+      "dateCreated": "2025-01-15",
+      "customerName": "บริษัท กขค จำกัด",
+      "projectName": "โครงการติดตั้งระบบท่ออาคาร A",
+      "totalValue": 500000,
+      "probabilityPercent": 75,
+      "weightedValue": 375000,
+      "dealStage": "Proposal Sent",
+      "expectedCloseDate": "2025-05-15",
+      "salesRep": "สมชาย",
+      "lastUpdated": "2025-04-25",
+      "notes": ""
+    },
+    {
+      "dealId": "DEAL-002",
+      "dateCreated": "2025-02-10",
+      "customerName": "บริษัท XYZ จำกัด",
+      "projectName": "โครงการปรับปรุงระบบปรับอากาศ",
+      "totalValue": 750000,
+      "probabilityPercent": 50,
+      "weightedValue": 375000,
+      "dealStage": "Negotiation",
+      "expectedCloseDate": "2025-06-20",
+      "salesRep": "สมหญิง",
+      "lastUpdated": "2025-04-28",
+      "notes": "Waiting for client feedback"
+    },
+    {
+      "dealId": "DEAL-003",
+      "dateCreated": "2025-03-05",
+      "customerName": "ห้างหุ้นส่วน 123",
+      "projectName": "โครงการติดตั้งระบบไฟฟ้าโรงงาน",
+      "totalValue": 1200000,
+      "probabilityPercent": 30,
+      "weightedValue": 360000,
+      "dealStage": "Initial Contact",
+      "expectedCloseDate": "2025-07-10",
+      "salesRep": "สมศักดิ์",
+      "lastUpdated": "2025-04-20",
+      "notes": "Needs follow up next week"
+    }
+  ]
+}
