@@ -36,9 +36,22 @@ let rowsPerPage = 10 // Number of rows per page for table pagination
 let sortColumn = 'lastUpdated'
 let sortDirection = 'desc'
 
+// Import authentication service
+import { 
+  checkAuthentication as authCheck, 
+  getAuthUser, 
+  getAuthToken, 
+  logout as authLogout, 
+  hasRole, 
+  hasPermission, 
+  AUTH_EVENTS, 
+  onAuthEvent 
+} from './js/auth/clientAuthService.js';
+
+// Import navigation component
+import Navigation from './js/components/navigation.js';
+
 // Authentication constants
-const AUTH_TOKEN_KEY = 'orderforecast_auth_token'
-const AUTH_USER_KEY = 'orderforecast_user'
 const REDIRECT_FLAG_KEY = 'orderforecast_redirect_flag'
 
 // Use the DEBUG utility for logging
@@ -94,7 +107,10 @@ function loadFiltersFromStorage() {
 
 // --- Main Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("script.js: DOM Loaded. Checking authentication...")
+  logAppDebug("script.js: DOM Loaded. Checking authentication...")
+  
+  // Set up authentication event listeners
+  setupAuthEventListeners();
   
   // Check if user is authenticated
   checkAuthentication()
@@ -160,55 +176,32 @@ async function initializeDashboard() {
  * @returns {Promise<boolean>} - True if authenticated, false otherwise
  */
 async function checkAuthentication() {
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
-  logAppDebug('Checking authentication token');
-  
-  if (!token) {
-    logAppDebug('No token found, redirecting to login');
-    // No token, redirect to login
-    sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
-    window.location.href = 'login.html';
-    return false;
-  }
-  
   try {
-    // Get the base URL (handles both direct and proxy access)
-    const baseUrl = window.location.origin;
+    logAppDebug("Checking authentication...");
     
-    logAppDebug('Verifying token with server');
-    // Verify token with server
-    const response = await fetch(`${baseUrl}/api/auth/verify`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ token })
-    });
+    // Use the new authentication service
+    const isAuthenticated = await authCheck();
     
-    const data = await response.json();
-    logAppDebug('Token verification response', data);
-    
-    if (!response.ok || !data.success) {
-      logAppDebug('Token invalid, redirecting to login');
-      // Invalid token, redirect to login
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-      localStorage.removeItem(AUTH_USER_KEY);
-      sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
-      window.location.href = 'login.html';
+    if (!isAuthenticated) {
+      logAppDebug("Not authenticated, redirecting to login");
+      redirectToLogin();
       return false;
     }
     
-    logAppDebug('Token valid, updating user info');
-    // Token is valid, update user info in UI
-    updateUserInfo(data.user);
+    // Get user info
+    const user = getAuthUser();
+    
+    // Update user info in UI
+    updateUserInfo(user);
+    
+    // Initialize navigation component
+    initializeNavigation();
+    
+    logAppDebug("Authentication successful");
     return true;
   } catch (error) {
-    logAppDebug('Authentication error:', error);
-    // On error, redirect to login
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_USER_KEY);
-    sessionStorage.setItem(REDIRECT_FLAG_KEY, 'to_login');
-    window.location.href = 'login.html';
+    logAppDebug("Authentication error:", error);
+    redirectToLogin();
     return false;
   }
 }
@@ -218,92 +211,111 @@ async function checkAuthentication() {
  * @param {Object} user - The user object from the server
  */
 function updateUserInfo(user) {
-  if (!user) {
-    logAppDebug('No user data provided to updateUserInfo');
-    return;
+  if (!user) return;
+  
+  // Show/hide elements based on user role
+  const adminElements = document.querySelectorAll('.admin-only');
+  const editorElements = document.querySelectorAll('.editor-only');
+  
+  // Use the hasRole function from our authentication service
+  if (hasRole('admin')) {
+    adminElements.forEach(el => el.style.display = '');
+    editorElements.forEach(el => el.style.display = '');
+  } else if (hasRole('editor')) {
+    adminElements.forEach(el => el.style.display = 'none');
+    editorElements.forEach(el => el.style.display = '');
+  } else {
+    adminElements.forEach(el => el.style.display = 'none');
+    editorElements.forEach(el => el.style.display = 'none');
   }
   
-  try {
-    // Store updated user info
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-    
-    // Update UI elements with user info
-    const userNameElement = document.getElementById('user-name');
-    if (userNameElement) {
-      userNameElement.textContent = user.username || 'User';
+  // Show/hide elements based on permissions
+  document.querySelectorAll('[data-permission]').forEach(el => {
+    const permission = el.getAttribute('data-permission');
+    if (permission && !hasPermission(permission)) {
+      el.style.display = 'none';
+    } else {
+      el.style.display = '';
     }
-    
-    // Update role-based UI elements if needed
-    if (user.role === 'admin') {
-      // Show admin-specific elements
-      document.querySelectorAll('.admin-only').forEach(el => {
-        el.style.display = 'block';
-      });
-    }
-    
-    logAppDebug('User info updated successfully', user);
-  } catch (error) {
-    logAppDebug('Error updating user info:', error);
-  }
+  });
 }
 
 /**
- * Get the authentication token
- * @returns {string|null} - The authentication token or null if not authenticated
+ * Set up authentication event listeners
  */
-function getAuthToken() {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
-}
-
-/**
- * Get the current user information
- * @returns {Object|null} - The user object or null if not authenticated
- */
-function getCurrentUser() {
-  const userJson = localStorage.getItem(AUTH_USER_KEY);
-  if (!userJson) return null;
+function setupAuthEventListeners() {
+  // Listen for logout events
+  onAuthEvent(AUTH_EVENTS.LOGOUT, () => {
+    logAppDebug('Logout event received, redirecting to login');
+    window.location.href = '/login.html';
+  });
   
-  try {
-    return JSON.parse(userJson);
-  } catch (error) {
-    console.error('Error parsing user data:', error);
-    return null;
-  }
+  // Listen for session expiry events
+  onAuthEvent(AUTH_EVENTS.SESSION_EXPIRED, () => {
+    logAppDebug('Session expired, redirecting to login');
+    window.location.href = '/login.html?expired=true';
+  });
+  
+  // Listen for unauthorized events
+  onAuthEvent(AUTH_EVENTS.UNAUTHORIZED, () => {
+    logAppDebug('Unauthorized access, redirecting to login');
+    window.location.href = '/login.html?unauthorized=true';
+  });
 }
 
 /**
  * Logout the current user
  */
-function logout() {
-  localStorage.removeItem(AUTH_TOKEN_KEY);
-  localStorage.removeItem(AUTH_USER_KEY);
-  window.location.href = 'login.html';
+async function logout() {
+  try {
+    // Use the logout function from our authentication service
+    await authLogout();
+    
+    // Redirect is handled by the auth event listener
+  } catch (error) {
+    logAppDebug('Logout error:', error);
+    
+    // Redirect to login page anyway
+    window.location.href = '/login.html';
+  }
 }
 
 // Initialize event listeners
 function initializeEventListeners() {
-  // Add event listeners to filter controls
-  document.getElementById('sales-rep-filter').addEventListener('change', handleFilterChange)
-  document.getElementById('deal-stage-filter').addEventListener('change', handleFilterChange)
-  document.getElementById('forecast-month-filter').addEventListener('change', handleFilterChange)
-  document.getElementById('search-deal-filter').addEventListener('input', handleFilterChange)
-  document.getElementById('start-date-filter').addEventListener('change', handleFilterChange)
-  document.getElementById('end-date-filter').addEventListener('change', handleFilterChange)
+  // Filter form
+  const filterForm = document.getElementById('filter-form');
+  if (filterForm) {
+    filterForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleFilterChange();
+    });
+  }
   
-  // Add event listener for filter logic changes
-  document.addEventListener('filter-logic-changed', handleFilterChange)
-
-  // Add event listener to refresh button
-  document.getElementById('refresh-data-btn').addEventListener('click', () => {
-    fetchDataAndInitializeDashboard(true) // Force refresh
-  })
-
-  // Add event listener to export button
-  document.getElementById('export-data-btn').addEventListener('click', () => {
-    showExportOptions(getFilteredData())
-  })
+  // Refresh data button
+  const refreshBtn = document.getElementById('refresh-data');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      fetchDataAndInitializeDashboard(true); // Force fresh data
+    });
+  }
   
-  // Add event listener to logout button
+  // Export button
+  const exportBtn = document.getElementById('export-btn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      showExportOptions(getCurrentFilteredData());
+    });
+  }
+  
+  // Dashboard customization button
+  const customizeBtn = document.getElementById('customize-dashboard');
+  if (customizeBtn) {
+    customizeBtn.addEventListener('click', () => {
+      showPreferencesModal();
+    });
+  }
+  
+  // Logout button
   const logoutBtn = document.querySelector('.logout-btn');
   if (logoutBtn) {
     logoutBtn.removeEventListener('click', () => {});

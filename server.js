@@ -7,8 +7,9 @@ const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 // Import authentication routes and middleware
-const authRoutes = require('./auth/authRoutes');
-const { authenticate } = require('./auth/authMiddleware');
+const authRoutes = require('./api/auth');
+const { authenticate, authorize, rateLimit, cors: corsMiddleware } = require('./js/auth/authMiddleware');
+const config = require('./js/config');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,6 +43,13 @@ app.use(express.static(path.join(__dirname), {
     // Set Cache-Control headers for better performance
     res.set('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
   }
+}));
+
+// Rate limiting for API requests
+app.use('/api', rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later'
 }));
 
 // Authentication routes
@@ -78,6 +86,11 @@ app.get('/login.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'login.html'));
 });
 
+// Serve loading states demo page
+app.get('/loading-demo.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'loading-demo.html'));
+});
+
 // Fallback route - must be after all other routes
 app.use((req, res) => {
   // Check if the request is for an HTML page
@@ -88,9 +101,22 @@ app.use((req, res) => {
   }
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  
+  // Return error response
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal server error',
+    error: process.env.NODE_ENV === 'production' ? 'server_error' : err.stack
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`
 Server running at http://localhost:${PORT}`);
   console.log(`API endpoint available at http://localhost:${PORT}/api/getSheetData`);
   console.log(`Authentication endpoint available at http://localhost:${PORT}/api/auth/login`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

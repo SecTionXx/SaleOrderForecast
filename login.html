@@ -79,8 +79,19 @@
         <button type="submit" class="login-btn">Login</button>
       </form>
     </div>
-    <!-- Debug utility for logging -->
-    <script src="utils/debugLog.js"></script>
-    <script src="login.js"></script>
+    <!-- Utility scripts -->
+    <script src="js/utils/logger.js" type="module"></script>
+    <script src="js/utils/helpers.js" type="module"></script>
+    
+    <!-- Component scripts -->
+    <script src="js/components/toast.js" type="module"></script>
+    
+    <!-- Authentication scripts -->
+    <script src="js/services/apiService.js" type="module"></script>
+    <script src="js/services/apiEndpoints.js" type="module"></script>
+    <script src="js/auth/clientAuthService.js" type="module"></script>
+    
+    <!-- Login script -->
+    <script src="login.js" type="module"></script>
   </body>
 </html>

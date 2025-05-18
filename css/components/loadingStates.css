@@ -1,0 +1,344 @@
+/**
+ * loadingStates.css - Styles for Loading States and Transitions
+ * Provides styling for loading indicators, error/success messages, and transitions
+ */
+
+/* Loading Overlay */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  z-index: 10;
+  border-radius: 4px;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background-color: var(--color-background);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--color-border);
+  border-top: 4px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+.loading-message {
+  font-size: 14px;
+  color: var(--color-text);
+  text-align: center;
+  max-width: 200px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error Message */
+.error-message {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px 15px;
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+  border-left: 4px solid var(--color-danger);
+  font-size: 14px;
+  display: none;
+  animation: slideUp 0.3s ease-out;
+  z-index: 5;
+}
+
+/* Success Message */
+.success-message {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px 15px;
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+  border-left: 4px solid var(--color-success);
+  font-size: 14px;
+  display: none;
+  animation: slideUp 0.3s ease-out;
+  z-index: 5;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Loading State Classes */
+.is-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.is-loading > *:not(.loading-overlay) {
+  opacity: 0.6;
+}
+
+.has-error {
+  border-color: var(--color-danger);
+}
+
+.is-success {
+  border-color: var(--color-success);
+}
+
+/* Page Transitions */
+.page {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Section Transitions */
+.section {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Button Loading State */
+button.is-loading {
+  color: transparent !important;
+}
+
+button.is-loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: calc(50% - 8px);
+  left: calc(50% - 8px);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Form Field Loading State */
+.form-field.is-loading {
+  position: relative;
+}
+
+.form-field.is-loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: calc(50% - 8px);
+  right: 10px;
+  border: 2px solid var(--color-border);
+  border-top: 2px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Card Loading State */
+.card.is-loading {
+  min-height: 100px;
+}
+
+/* Table Loading State */
+.table-container.is-loading {
+  min-height: 100px;
+}
+
+/* Chart Loading State */
+.chart-container.is-loading {
+  min-height: 200px;
+}
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(90deg, 
+    var(--color-border-light) 25%, 
+    var(--color-border) 37%, 
+    var(--color-border-light) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+  border-radius: 4px;
+}
+
+.skeleton-text {
+  height: 16px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.skeleton-text.short {
+  width: 60%;
+}
+
+.skeleton-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.skeleton-rectangle {
+  width: 100%;
+  height: 120px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* Fade Transition */
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 0.3s;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* Slide Transition */
+.slide-enter {
+  transform: translateX(100%);
+}
+
+.slide-enter-active {
+  transform: translateX(0);
+  transition: transform 0.3s;
+}
+
+.slide-exit {
+  transform: translateX(0);
+}
+
+.slide-exit-active {
+  transform: translateX(-100%);
+  transition: transform 0.3s;
+}
+
+/* Slide Up Transition */
+.slide-up-enter {
+  transform: translateY(30px);
+  opacity: 0;
+}
+
+.slide-up-enter-active {
+  transform: translateY(0);
+  opacity: 1;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+.slide-up-exit {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.slide-up-exit-active {
+  transform: translateY(-30px);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+/* Zoom Transition */
+.zoom-enter {
+  transform: scale(0.8);
+  opacity: 0;
+}
+
+.zoom-enter-active {
+  transform: scale(1);
+  opacity: 1;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+.zoom-exit {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.zoom-exit-active {
+  transform: scale(1.2);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .loading-content {
+    padding: 15px;
+  }
+  
+  .loading-spinner {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 10px;
+  }
+  
+  .loading-message {
+    font-size: 13px;
+  }
+  
+  .error-message,
+  .success-message {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .loading-overlay {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .loading-content {
+    background-color: var(--color-background-dark);
+  }
+  
+  .error-message {
+    background-color: rgba(var(--color-danger-rgb), 0.2);
+  }
+  
+  .success-message {
+    background-color: rgba(var(--color-success-rgb), 0.2);
+  }
+  
+  .skeleton {
+    background: linear-gradient(90deg, 
+      var(--color-border-dark) 25%, 
+      var(--color-border) 37%, 
+      var(--color-border-dark) 63%
+    );
+  }
+}

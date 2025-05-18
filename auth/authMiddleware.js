@@ -1,6 +1,6 @@
 // authMiddleware.js - Authentication middleware for Express
 
-const { verifyToken, refreshToken, getUserById } = require('./authService');
+const authService = require('./authService');
 const { hasPermission, getRoleLevel } = require('./roleBasedAccess');
 
 /**
@@ -24,14 +24,14 @@ function authenticate(req, res, next) {
   const token = parts[1];
   
   // Verify token
-  const verification = verifyToken(token);
+  const verification = authService.verifyToken(token);
   
   if (!verification.valid) {
     // Check if token is expired but can be refreshed
     if (verification.error === 'jwt expired') {
       try {
         // Try to refresh the token
-        const refreshResult = refreshToken(token);
+        const refreshResult = authService.refreshToken(token);
         if (refreshResult.success) {
           // Set the new token in the response header
           res.set('X-New-Token', refreshResult.token);
@@ -51,7 +51,7 @@ function authenticate(req, res, next) {
   }
   
   // Get the latest user data to ensure we have current role/permissions
-  const userResult = getUserById(verification.user.id);
+  const userResult = authService.getUserById(verification.user.id);
   
   if (!userResult.success) {
     return res.status(401).json({ success: false, message: 'User not found' });

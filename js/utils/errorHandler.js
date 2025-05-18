@@ -237,4 +237,7 @@ export function handleUnhandledRejection(event) {
 }
 
 // Register global error handlers
-window.addEventListener('unhandledrejection', handleUnhandledRejection);
+// Check if we're in a browser environment before adding event listeners
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', handleUnhandledRejection);
+}
