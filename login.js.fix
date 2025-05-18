@@ -1,0 +1,92 @@
+// filepath: e:\Website Project\OrderForecast\login.js
+// login.js - Server-side authentication with JWT
+
+// Use an IIFE to avoid polluting the global scope with our constants
+(function() {
+  // Define token constants on window if they don't exist yet
+  // This approach prevents redeclaration errors
+  window.AUTH_TOKEN_KEY = window.AUTH_TOKEN_KEY || 'orderforecast_auth_token';
+  window.AUTH_USER_KEY = window.AUTH_USER_KEY || 'orderforecast_user';
+  window.REDIRECT_FLAG_KEY = window.REDIRECT_FLAG_KEY || 'orderforecast_redirect_flag';
+  window.SESSION_INFO_KEY = window.SESSION_INFO_KEY || 'orderforecast_session';
+})();
+
+// The rest of the file would remain the same, using window.AUTH_TOKEN_KEY and other global constants
+// instead of trying to redeclare them in this scope.
+
+// Use the DEBUG utility for logging
+function logAuthDebug(message, data = null) {
+  if (window.DEBUG && DEBUG.debug) {
+    DEBUG.debug('Auth', message, data);
+  } else {
+    const timestamp = new Date().toISOString();
+    if (data) {
+      console.log(`[${timestamp}] [Auth] ${message}`, data);
+    } else {
+      console.log(`[${timestamp}] [Auth] ${message}`);
+    }
+  }
+}
+
+// Check if we're on the login page
+function isLoginPage() {
+  return window.location.pathname.endsWith('login.html');
+}
+
+// Check if we're on the main dashboard
+function isDashboardPage() {
+  return window.location.pathname.endsWith('index.html') || 
+         window.location.pathname === '/' || 
+         window.location.pathname === '';
+}
+
+// Main initialization when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  logAuthDebug('Page loaded: ' + window.location.href);
+  
+  // Clear any redirect flags to prevent loops
+  const redirectFlag = sessionStorage.getItem(window.REDIRECT_FLAG_KEY);
+  if (redirectFlag) {
+    logAuthDebug('Found redirect flag, clearing it', redirectFlag);
+    sessionStorage.removeItem(window.REDIRECT_FLAG_KEY);
+  }
+  
+  if (isLoginPage()) {
+    logAuthDebug('Login page detected');
+    
+    // Setup login form
+    setupLoginForm();
+    
+    // Add helper text for development
+    addHelperText();
+    
+    // Only check token if we haven't just been redirected here
+    if (redirectFlag !== 'to_login') {
+      // If we're on login page and already have a valid token, redirect to dashboard
+      const token = localStorage.getItem(window.AUTH_TOKEN_KEY);
+      if (token) {
+        logAuthDebug('Token found on login page, verifying...');
+        verifyAndRedirect(token);
+      }
+    }
+  } else if (isDashboardPage()) {
+    logAuthDebug('Dashboard page detected');
+    
+    // Only redirect if we haven't just been redirected here
+    if (redirectFlag !== 'to_dashboard') {
+      // If we're on dashboard and don't have a token, redirect to login
+      const token = localStorage.getItem(window.AUTH_TOKEN_KEY);
+      if (!token) {
+        logAuthDebug('No token found on dashboard, redirecting to login');
+        sessionStorage.setItem(window.REDIRECT_FLAG_KEY, 'to_login');
+        window.location.href = 'login.html';
+      } else {
+        // Verify token is still valid
+        verifyToken(token);
+      }
+    }
+  }
+});
+
+// Continue with the rest of the file, always using window.AUTH_TOKEN_KEY instead of AUTH_TOKEN_KEY
+// This prevents any issues with variable redeclaration

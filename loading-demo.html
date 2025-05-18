@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading States & Transitions Demo - SaleOrderForecast</title>
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/components/loadingStates.css">
+  
+  <style>
+    /* Demo-specific styles */
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .demo-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background-color: var(--color-background);
+    }
+    
+    .demo-section h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .demo-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
+    }
+    
+    .demo-card {
+      padding: 15px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      background-color: var(--color-background-light);
+      cursor: pointer;
+      position: relative;
+      min-height: 120px;
+    }
+    
+    .demo-card:hover {
+      border-color: var(--color-primary);
+    }
+    
+    .demo-form {
+      max-width: 500px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .transition-controls {
+      margin-bottom: 15px;
+    }
+    
+    .transition-container {
+      position: relative;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      min-height: 150px;
+      overflow: hidden;
+    }
+    
+    .section {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 20px;
+      background-color: var(--color-background-light);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    .section.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    .skeleton-container {
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 20px;
+      margin-top: 15px;
+    }
+    
+    .data-container-demo {
+      margin-top: 30px;
+    }
+    
+    .data-container {
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 0;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    
+    .data-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background-color: var(--color-background-light);
+      border-bottom: 1px solid var(--color-border);
+    }
+    
+    .data-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .data-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .data-content {
+      padding: 15px;
+      min-height: 200px;
+    }
+    
+    .empty-state, .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .empty-state p, .error-state p {
+      margin-bottom: 15px;
+      color: var(--color-text-muted);
+    }
+    
+    .error-state p {
+      color: var(--color-danger);
+    }
+    
+    .retry-button {
+      padding: 6px 12px;
+      background-color: var(--color-danger-light);
+      color: var(--color-danger);
+      border: 1px solid var(--color-danger);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .retry-button:hover {
+      background-color: var(--color-danger);
+      color: white;
+    }
+    
+    /* Utility classes */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    }
+    
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--color-primary-dark);
+    }
+    
+    .btn-secondary {
+      background-color: var(--color-secondary);
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background-color: var(--color-secondary-dark);
+    }
+    
+    .btn-success {
+      background-color: var(--color-success);
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background-color: var(--color-success-dark);
+    }
+    
+    .btn-outline-primary {
+      background-color: transparent;
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+    
+    .btn-outline-primary:hover {
+      background-color: var(--color-primary);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <header class="main-header">
+    <div class="container">
+      <h1>Loading States & Transitions Demo</h1>
+      <p>This page demonstrates the various loading states and transitions available in the SaleOrderForecast application.</p>
+    </div>
+  </header>
+  
+  <main class="demo-container">
+    <div id="loading-states-demo">
+      <!-- Loading States Demo will be inserted here by JavaScript -->
+    </div>
+    
+    <div class="data-container-demo">
+      <h2>Data Containers with Loading States</h2>
+      
+      <div class="demo-section">
+        <h3>Progressive Table with Loading</h3>
+        <div class="button-group">
+          <button id="load-table-data" class="btn btn-primary">Load Data</button>
+          <button id="load-table-empty" class="btn btn-secondary">Show Empty State</button>
+          <button id="load-table-error" class="btn btn-danger">Show Error State</button>
+        </div>
+        <div id="demo-table" class="data-container" data-title="Sales Data">
+          <!-- Table will be inserted here by JavaScript -->
+        </div>
+      </div>
+      
+      <div class="demo-section">
+        <h3>Progressive Chart with Loading</h3>
+        <div class="button-group">
+          <button id="load-chart-data" class="btn btn-primary">Load Data</button>
+          <button id="load-chart-empty" class="btn btn-secondary">Show Empty State</button>
+          <button id="load-chart-error" class="btn btn-danger">Show Error State</button>
+        </div>
+        <div id="demo-chart" class="data-container" data-title="Sales Trend">
+          <!-- Chart will be inserted here by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <footer class="main-footer">
+    <div class="container">
+      <p>&copy; 2023 SaleOrderForecast. All rights reserved.</p>
+    </div>
+  </footer>
+  
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script type="module">
+    import { initLoadingStatesDemo } from './js/components/loadingStateDemo.js';
+    import { createTableWithLoading, createChartWithLoading } from './js/components/dataContainerWithLoading.js';
+    import { generateMockSalesData } from './js/utils/mockDataGenerator.js';
+    
+    // Initialize loading states demo
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize Feather icons
+      feather.replace();
+      
+      // Initialize loading states demo
+      initLoadingStatesDemo('loading-states-demo');
+      
+      // Initialize data containers demo
+      initDataContainersDemo();
+    });
+    
+    function initDataContainersDemo() {
+      // Create table with loading
+      const tableContainer = document.getElementById('demo-table');
+      const tableWithLoading = createTableWithLoading(tableContainer, {
+        loadingMessage: 'Loading sales data...',
+        errorMessage: 'Failed to load sales data. Please try again.',
+        emptyMessage: 'No sales data available.',
+        progressiveOptions: {
+          columns: [
+            { id: 'date', label: 'Date', type: 'date' },
+            { id: 'product', label: 'Product', type: 'string' },
+            { id: 'region', label: 'Region', type: 'string' },
+            { id: 'amount', label: 'Amount', type: 'currency' },
+            { id: 'quantity', label: 'Quantity', type: 'number' }
+          ],
+          pageSize: 10,
+          sortable: true,
+          filterable: true
+        }
+      });
+      
+      // Create chart with loading
+      const chartContainer = document.getElementById('demo-chart');
+      const chartWithLoading = createChartWithLoading(chartContainer, {
+        loadingMessage: 'Loading sales trend...',
+        errorMessage: 'Failed to load sales trend. Please try again.',
+        emptyMessage: 'No sales trend data available.',
+        progressiveOptions: {
+          type: 'line',
+          xKey: 'date',
+          yKey: 'amount',
+          groupKey: 'product',
+          aggregation: 'sum',
+          timeUnit: 'month'
+        }
+      });
+      
+      // Set up table demo buttons
+      document.getElementById('load-table-data').addEventListener('click', async () => {
+        try {
+          await tableWithLoading.loadData(() => {
+            // Simulate API call
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                resolve(generateMockSalesData(50));
+              }, 1500);
+            });
+          });
+        } catch (error) {
+          console.error('Error loading table data:', error);
+        }
+      });
+      
+      document.getElementById('load-table-empty').addEventListener('click', () => {
+        tableWithLoading.setData([]);
+      });
+      
+      document.getElementById('load-table-error').addEventListener('click', async () => {
+        try {
+          await tableWithLoading.loadData(() => {
+            // Simulate API error
+            return new Promise((_, reject) => {
+              setTimeout(() => {
+                reject(new Error('Network error: Failed to fetch sales data'));
+              }, 1500);
+            });
+          });
+        } catch (error) {
+          console.error('Error loading table data:', error);
+        }
+      });
+      
+      // Set up chart demo buttons
+      document.getElementById('load-chart-data').addEventListener('click', async () => {
+        try {
+          await chartWithLoading.loadData(() => {
+            // Simulate API call
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                resolve(generateMockSalesData(100));
+              }, 1500);
+            });
+          });
+        } catch (error) {
+          console.error('Error loading chart data:', error);
+        }
+      });
+      
+      document.getElementById('load-chart-empty').addEventListener('click', () => {
+        chartWithLoading.setData([]);
+      });
+      
+      document.getElementById('load-chart-error').addEventListener('click', async () => {
+        try {
+          await chartWithLoading.loadData(() => {
+            // Simulate API error
+            return new Promise((_, reject) => {
+              setTimeout(() => {
+                reject(new Error('Network error: Failed to fetch sales trend data'));
+              }, 1500);
+            });
+          });
+        } catch (error) {
+          console.error('Error loading chart data:', error);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,10 @@
 /**
  * formValidation.js - Provides validation rules for data entry forms
+ * Enhanced with comprehensive validation rules and better error handling
  */
+
+import { sanitizeString, sanitizeObject } from './sanitizer.js';
+import { logDebug, logError } from './logger.js';
 
 /**
  * Validation rules for deal form fields
@@ -88,6 +92,23 @@ const validationRules = {
 };
 
 /**
+ * Common validation types with their validation functions
+ */
+const validationTypes = {
+  string: (value) => typeof value === 'string',
+  number: (value) => !isNaN(parseFloat(value)) && isFinite(value),
+  integer: (value) => Number.isInteger(Number(value)),
+  boolean: (value) => typeof value === 'boolean' || value === 'true' || value === 'false',
+  date: (value) => !isNaN(new Date(value).getTime()),
+  email: (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+  url: (value) => /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(value),
+  phone: (value) => /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/.test(value),
+  zipCode: (value) => /^\d{5}(-\d{4})?$/.test(value),
+  currency: (value) => /^\$?\d+(,\d{3})*(\.\d{1,2})?$/.test(value),
+  percentage: (value) => /^\d+(\.\d{1,2})?%?$/.test(value)
+};
+
+/**
  * Validate a form field against defined rules
  * @param {HTMLElement} field - The form field to validate
  * @param {Object} formData - All form data for conditional validation
@@ -103,77 +124,137 @@ function validateField(field, formData = {}) {
     return { isValid: true };
   }
   
-  // Check required
-  if (rules.required && !value.trim()) {
-    return {
-      isValid: false,
-      errorMessage: rules.errorMessages.required
-    };
-  }
-  
-  // Check requiredIf (conditional required)
-  if (rules.requiredIf && rules.requiredIf(formData) && !value.trim()) {
-    return {
-      isValid: false,
-      errorMessage: rules.errorMessages.requiredIf
-    };
-  }
-  
-  // Skip other validations if field is empty and not required
-  if (!value.trim()) {
+  try {
+    // Sanitize the value first to prevent XSS
+    const sanitizedValue = sanitizeString(value);
+    
+    // Check required
+    if (rules.required && !sanitizedValue.trim()) {
+      return {
+        isValid: false,
+        errorMessage: rules.errorMessages.required
+      };
+    }
+    
+    // Check requiredIf (conditional required)
+    if (rules.requiredIf && rules.requiredIf(formData) && !sanitizedValue.trim()) {
+      return {
+        isValid: false,
+        errorMessage: rules.errorMessages.requiredIf
+      };
+    }
+    
+    // Skip other validations if field is empty and not required
+    if (!sanitizedValue.trim()) {
+      return { isValid: true };
+    }
+    
+    // Check data type
+    if (rules.type && validationTypes[rules.type]) {
+      if (!validationTypes[rules.type](sanitizedValue)) {
+        return {
+          isValid: false,
+          errorMessage: rules.errorMessages.type || `Must be a valid ${rules.type}`
+        };
+      }
+    }
+    
+    // Check minLength
+    if (rules.minLength && sanitizedValue.length < rules.minLength) {
+      return {
+        isValid: false,
+        errorMessage: rules.errorMessages.minLength
+      };
+    }
+    
+    // Check maxLength
+    if (rules.maxLength && sanitizedValue.length > rules.maxLength) {
+      return {
+        isValid: false,
+        errorMessage: rules.errorMessages.maxLength
+      };
+    }
+    
+    // Check pattern
+    if (rules.pattern && !rules.pattern.test(sanitizedValue)) {
+      return {
+        isValid: false,
+        errorMessage: rules.errorMessages.pattern
+      };
+    }
+    
+    // Check min value (for number inputs)
+    if (rules.min !== undefined && parseFloat(sanitizedValue) < rules.min) {
+      return {
+        isValid: false,
+        errorMessage: rules.errorMessages.min
+      };
+    }
+    
+    // Check max value (for number inputs)
+    if (rules.max !== undefined && parseFloat(sanitizedValue) > rules.max) {
+      return {
+        isValid: false,
+        errorMessage: rules.errorMessages.max
+      };
+    }
+    
+    // Check future date (for date inputs)
+    if (rules.future && new Date(sanitizedValue) <= new Date()) {
+      return {
+        isValid: false,
+        errorMessage: rules.errorMessages.future
+      };
+    }
+    
+    // Check past date (for date inputs)
+    if (rules.past && new Date(sanitizedValue) >= new Date()) {
+      return {
+        isValid: false,
+        errorMessage: rules.errorMessages.past
+      };
+    }
+    
+    // Check date range
+    if (rules.dateRange && formData[rules.dateRange.compareField]) {
+      const compareDate = new Date(formData[rules.dateRange.compareField]);
+      const currentDate = new Date(sanitizedValue);
+      
+      if (rules.dateRange.type === 'before' && currentDate >= compareDate) {
+        return {
+          isValid: false,
+          errorMessage: rules.errorMessages.dateRange
+        };
+      }
+      
+      if (rules.dateRange.type === 'after' && currentDate <= compareDate) {
+        return {
+          isValid: false,
+          errorMessage: rules.errorMessages.dateRange
+        };
+      }
+    }
+    
+    // Check custom validation function
+    if (rules.validate && typeof rules.validate === 'function') {
+      const customValidation = rules.validate(sanitizedValue, formData);
+      if (customValidation !== true) {
+        return {
+          isValid: false,
+          errorMessage: customValidation || rules.errorMessages.validate
+        };
+      }
+    }
+    
+    // All validations passed
     return { isValid: true };
-  }
-  
-  // Check minLength
-  if (rules.minLength && value.length < rules.minLength) {
+  } catch (error) {
+    logError('Validation error:', error);
     return {
       isValid: false,
-      errorMessage: rules.errorMessages.minLength
+      errorMessage: 'An error occurred during validation'
     };
   }
-  
-  // Check maxLength
-  if (rules.maxLength && value.length > rules.maxLength) {
-    return {
-      isValid: false,
-      errorMessage: rules.errorMessages.maxLength
-    };
-  }
-  
-  // Check pattern
-  if (rules.pattern && !rules.pattern.test(value)) {
-    return {
-      isValid: false,
-      errorMessage: rules.errorMessages.pattern
-    };
-  }
-  
-  // Check min value (for number inputs)
-  if (rules.min !== undefined && parseFloat(value) < rules.min) {
-    return {
-      isValid: false,
-      errorMessage: rules.errorMessages.min
-    };
-  }
-  
-  // Check max value (for number inputs)
-  if (rules.max !== undefined && parseFloat(value) > rules.max) {
-    return {
-      isValid: false,
-      errorMessage: rules.errorMessages.max
-    };
-  }
-  
-  // Check future date (for date inputs)
-  if (rules.future && new Date(value) <= new Date()) {
-    return {
-      isValid: false,
-      errorMessage: rules.errorMessages.future
-    };
-  }
-  
-  // All validations passed
-  return { isValid: true };
 }
 
 /**

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "1",
+    "username": "admin",
+    "passwordHash": "8636c046585a4810f955b8cc5b674baef378a496df8f0d3ecc116adb835951d8f0881ef76f44f2ff820691fbff2fabcca43cc784bd9b57c3391fed5eb5b6a083",
+    "salt": "4a3ef45d1cb783b0d63f69b009adaf9e",
+    "role": "admin",
+    "name": "Administrator",
+    "email": "admin@example.com",
+    "lastLogin": null,
+    "created": "2025-05-16T23:57:41.484Z",
+    "status": "active",
+    "permissions": [],
+    "preferences": {}
+  },
+  {
+    "id": "2",
+    "username": "editor",
+    "passwordHash": "599f36a90084c3abd617b910bde340bb5706dd58b24fdc285ed0973fe7d3577a87601d0f980ce29e6a9a09b8df4c96d56b7ef72d22a7006f49b5f2214a9cb594",
+    "salt": "4a3ef45d1cb783b0d63f69b009adaf9e",
+    "role": "editor",
+    "name": "Content Editor",
+    "email": "editor@example.com",
+    "lastLogin": null,
+    "created": "2025-05-16T23:57:41.485Z",
+    "status": "active",
+    "permissions": [],
+    "preferences": {}
+  },
+  {
+    "id": "3",
+    "username": "user",
+    "passwordHash": "2281d52047dab5569864c18ffd742421fb0b26933eb394b314ab735a61868b30d78b24b27fc18390df8262f6945a4579aa6e25fa59cf9534282e5400950cf2f4",
+    "salt": "4a3ef45d1cb783b0d63f69b009adaf9e",
+    "role": "viewer",
+    "name": "Regular User",
+    "email": "user@example.com",
+    "lastLogin": null,
+    "created": "2025-05-16T23:57:41.485Z",
+    "status": "active",
+    "permissions": [],
+    "preferences": {}
+  }
+]

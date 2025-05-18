@@ -224,15 +224,21 @@ async function fetchDataAndInitializeDashboard(forceFresh = false) {
   }
 }
 
-// Export functions and variables that need to be accessible from other modules
+// Export functions that need to be accessible from other modules
 export {
   init,
-  getCurrentFilteredData,
+  checkAuthentication,
+  updateUserInfo,
+  setupAuthEventListeners,
+  logout,
+  initializeDashboard,
   fetchDataAndInitializeDashboard,
-  allDealsData,
-  filteredData,
-  saveFiltersToStorage,
-  loadFiltersFromStorage
+  initializeEventListeners,
+  getState,
+  updateState,
+  addStateListener,
+  removeStateListener,
+  resetState
 };
 
 // Initialize the application when the DOM is loaded

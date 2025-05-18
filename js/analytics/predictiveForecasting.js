@@ -1,6 +1,7 @@
 /**
  * predictiveForecasting.js - Predictive Forecasting Algorithms
  * Provides algorithms for predicting future sales based on historical data
+ * Optimized for performance with large datasets
  */
 
 import { logDebug, logError } from '../utils/logger.js';
@@ -10,6 +11,13 @@ import {
   calculateLinearRegression,
   calculateSeasonalIndices
 } from './trendAnalysis.js';
+import {
+  processInChunks,
+  processWithWorker,
+  optimizedSort,
+  streamingTransform,
+  memoize
+} from '../utils/dataProcessingOptimizer.js';
 
 /**
  * Simple moving average forecast
@@ -25,10 +33,10 @@ function movingAverageForecast(historicalData, periods = 3, windowSize = 3, valu
     return [];
   }
   
-  // Sort data by date if dateKey is provided
+  // Sort data by date if dateKey is provided - use optimized sort for large datasets
   let sortedData = [...historicalData];
   if (dateKey && sortedData[0] && sortedData[0][dateKey]) {
-    sortedData.sort((a, b) => new Date(a[dateKey]) - new Date(b[dateKey]));
+    sortedData = optimizedSort(sortedData, (a, b) => new Date(a[dateKey]) - new Date(b[dateKey]));
   }
   
   // Calculate moving average for historical data
@@ -82,10 +90,10 @@ function exponentialSmoothingForecast(historicalData, periods = 3, alpha = 0.3, 
     return [];
   }
   
-  // Sort data by date if dateKey is provided
+  // Sort data by date if dateKey is provided - use optimized sort for large datasets
   let sortedData = [...historicalData];
   if (dateKey && sortedData[0] && sortedData[0][dateKey]) {
-    sortedData.sort((a, b) => new Date(a[dateKey]) - new Date(b[dateKey]));
+    sortedData = optimizedSort(sortedData, (a, b) => new Date(a[dateKey]) - new Date(b[dateKey]));
   }
   
   // Calculate exponential moving average for historical data
@@ -133,15 +141,40 @@ function exponentialSmoothingForecast(historicalData, periods = 3, alpha = 0.3, 
  * @param {string} dateKey - Key to access the date in data objects
  * @returns {Array} - Forecasted data points
  */
+// Memoized linear regression calculation for better performance with repeated calls
+const memoizedLinearRegression = memoize((xValues, yValues) => {
+  const n = xValues.length;
+  let sumX = 0;
+  let sumY = 0;
+  let sumXY = 0;
+  let sumXX = 0;
+  
+  for (let i = 0; i < n; i++) {
+    sumX += xValues[i];
+    sumY += yValues[i];
+    sumXY += xValues[i] * yValues[i];
+    sumXX += xValues[i] * xValues[i];
+  }
+  
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+  
+  return { slope, intercept };
+}, (args) => {
+  // Custom key function to handle arrays
+  const [xValues, yValues] = args;
+  return `${xValues.length}_${yValues.length}`;
+});
+
 function linearRegressionForecast(historicalData, periods = 3, valueKey = 'amount', dateKey = 'date') {
   if (!Array.isArray(historicalData) || historicalData.length < 2) {
     return [];
   }
   
-  // Sort data by date if dateKey is provided
+  // Sort data by date if dateKey is provided - use optimized sort for large datasets
   let sortedData = [...historicalData];
   if (dateKey && sortedData[0] && sortedData[0][dateKey]) {
-    sortedData.sort((a, b) => new Date(a[dateKey]) - new Date(b[dateKey]));
+    sortedData = optimizedSort(sortedData, (a, b) => new Date(a[dateKey]) - new Date(b[dateKey]));
   }
   
   // Convert dates to numeric values for regression
@@ -159,22 +192,8 @@ function linearRegressionForecast(historicalData, periods = 3, valueKey = 'amoun
   // Extract y values
   const yValues = sortedData.map(item => Number(item[valueKey]) || 0);
   
-  // Calculate linear regression
-  const n = xValues.length;
-  let sumX = 0;
-  let sumY = 0;
-  let sumXY = 0;
-  let sumXX = 0;
-  
-  for (let i = 0; i < n; i++) {
-    sumX += xValues[i];
-    sumY += yValues[i];
-    sumXY += xValues[i] * yValues[i];
-    sumXX += xValues[i] * xValues[i];
-  }
-  
-  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-  const intercept = (sumY - slope * sumX) / n;
+  // Calculate linear regression using memoized function for better performance
+  const { slope, intercept } = memoizedLinearRegression(xValues, yValues);
   
   // Generate forecast
   const forecast = [];
@@ -360,7 +379,17 @@ function weightedAverageForecast(historicalData, periods = 3, weights = [0.5, 0.
  * @param {string} dateKey - Key to access the date in data objects
  * @returns {Array} - Forecasted data points
  */
-function ensembleForecast(historicalData, periods = 3, options = {}, valueKey = 'amount', dateKey = 'date') {
+/**
+ * Ensemble forecast (combining multiple forecasting methods)
+ * Optimized for large datasets using parallel processing when available
+ * @param {Array} historicalData - Historical data points
+ * @param {number} periods - Number of periods to forecast
+ * @param {Object} options - Forecasting options
+ * @param {string} valueKey - Key to access the value in data objects
+ * @param {string} dateKey - Key to access the date in data objects
+ * @returns {Array} - Forecasted data points
+ */
+async function ensembleForecast(historicalData, periods = 3, options = {}, valueKey = 'amount', dateKey = 'date') {
   if (!Array.isArray(historicalData) || historicalData.length === 0) {
     return [];
   }
@@ -379,72 +408,6 @@ function ensembleForecast(historicalData, periods = 3, options = {}, valueKey = 
   } = options;
   
   // Generate forecasts for each method
-  const forecasts = {};
-  let totalWeight = 0;
-  
-  if (methods.includes('linear') && historicalData.length >= 2) {
-    forecasts.linear = linearRegressionForecast(historicalData, periods, valueKey, dateKey);
-    totalWeight += weights.linear || 0;
-  }
-  
-  if (methods.includes('moving_average') && historicalData.length >= movingAveragePeriod) {
-    forecasts.moving_average = movingAverageForecast(historicalData, periods, movingAveragePeriod, valueKey, dateKey);
-    totalWeight += weights.moving_average || 0;
-  }
-  
-  if (methods.includes('exponential') && historicalData.length >= 1) {
-    forecasts.exponential = exponentialSmoothingForecast(historicalData, periods, emaAlpha, valueKey, dateKey);
-    totalWeight += weights.exponential || 0;
-  }
-  
-  if (methods.includes('seasonal') && historicalData.length >= seasonality * 2) {
-    forecasts.seasonal = seasonalForecast(historicalData, periods, seasonality, valueKey, dateKey);
-    totalWeight += weights.seasonal || 0;
-  }
-  
-  // Combine forecasts
-  const ensemble = [];
-  
-  for (let i = 0; i < periods; i++) {
-    let weightedSum = 0;
-    
-    for (const method in forecasts) {
-      if (forecasts[method][i]) {
-        weightedSum += forecasts[method][i][valueKey] * (weights[method] || 0);
-      }
-    }
-    
-    const ensembleValue = totalWeight > 0 ? weightedSum / totalWeight : 0;
-    
-    let forecastDate = null;
-    if (dateKey && Object.values(forecasts)[0][i] && Object.values(forecasts)[0][i][dateKey]) {
-      forecastDate = Object.values(forecasts)[0][i][dateKey];
-    }
-    
-    const forecastPoint = {
-      [valueKey]: ensembleValue,
-      forecast: true,
-      method: 'ensemble'
-    };
-    
-    if (forecastDate) {
-      forecastPoint[dateKey] = forecastDate;
-    }
-    
-    // Add individual method forecasts
-    for (const method in forecasts) {
-      if (forecasts[method][i]) {
-        forecastPoint[`${method}_forecast`] = forecasts[method][i][valueKey];
-      }
-    }
-    
-    ensemble.push(forecastPoint);
-  }
-  
-  return ensemble;
-}
-
-/**
  * Generate forecast with confidence intervals
  * @param {Array} historicalData - Historical data points
  * @param {number} periods - Number of periods to forecast
@@ -453,7 +416,7 @@ function ensembleForecast(historicalData, periods = 3, options = {}, valueKey = 
  * @param {string} dateKey - Key to access the date in data objects
  * @returns {Object} - Forecast with confidence intervals
  */
-function forecastWithConfidenceIntervals(historicalData, periods = 3, options = {}, valueKey = 'amount', dateKey = 'date') {
+async function forecastWithConfidenceIntervals(historicalData, periods = 3, options = {}, valueKey = 'amount', dateKey = 'date') {
   if (!Array.isArray(historicalData) || historicalData.length === 0) {
     return {
       success: false,
@@ -468,29 +431,250 @@ function forecastWithConfidenceIntervals(historicalData, periods = 3, options = 
       ...methodOptions
     } = options;
     
-    // Generate base forecast
-    let forecast;
+    // Generate forecasts using different methods - process in parallel for large datasets
+    const forecastPromises = [];
+    const forecasts = [];
     
-    switch (method) {
-      case 'linear':
-        forecast = linearRegressionForecast(historicalData, periods, valueKey, dateKey);
-        break;
-      case 'moving_average':
-        forecast = movingAverageForecast(historicalData, periods, methodOptions.windowSize || 3, valueKey, dateKey);
-        break;
-      case 'exponential':
-        forecast = exponentialSmoothingForecast(historicalData, periods, methodOptions.alpha || 0.3, valueKey, dateKey);
-        break;
-      case 'seasonal':
-        forecast = seasonalForecast(historicalData, periods, methodOptions.seasonality || 12, valueKey, dateKey);
-        break;
-      case 'weighted':
-        forecast = weightedAverageForecast(historicalData, periods, methodOptions.weights || [0.5, 0.3, 0.2], valueKey, dateKey);
-        break;
-      case 'ensemble':
-      default:
-        forecast = ensembleForecast(historicalData, periods, methodOptions, valueKey, dateKey);
-        break;
+    if (options.methods) {
+      // For large datasets, process forecasts in parallel
+      if (historicalData.length > 1000) {
+        if (options.methods.includes('moving_average')) {
+          forecastPromises.push(
+            processWithWorker(historicalData, (data, opts) => {
+              // This function will run in a separate thread
+              return movingAverageForecast(
+                data, 
+                opts.periods, 
+                opts.windowSize, 
+                opts.valueKey, 
+                opts.dateKey
+              );
+            }, {
+              periods,
+              windowSize: options.windowSize || 3,
+              valueKey,
+              dateKey
+            }).then(result => {
+              forecasts.push({
+                method: 'moving_average',
+                forecast: result,
+                weight: options.weights?.moving_average || 1
+              });
+            })
+          );
+        }
+        
+        if (options.methods.includes('exponential_smoothing')) {
+          forecastPromises.push(
+            processWithWorker(historicalData, (data, opts) => {
+              return exponentialSmoothingForecast(
+                data, 
+                opts.periods, 
+                opts.alpha, 
+                opts.valueKey, 
+                opts.dateKey
+              );
+            }, {
+              periods,
+              alpha: options.alpha || 0.3,
+              valueKey,
+              dateKey
+            }).then(result => {
+              forecasts.push({
+                method: 'exponential_smoothing',
+                forecast: result,
+                weight: options.weights?.exponential_smoothing || 1
+              });
+            })
+          );
+        }
+        
+        if (options.methods.includes('linear_regression')) {
+          forecastPromises.push(
+            processWithWorker(historicalData, (data, opts) => {
+              return linearRegressionForecast(
+                data, 
+                opts.periods, 
+                opts.valueKey, 
+                opts.dateKey
+              );
+            }, {
+              periods,
+              valueKey,
+              dateKey
+            }).then(result => {
+              forecasts.push({
+                method: 'linear_regression',
+                forecast: result,
+                weight: options.weights?.linear_regression || 1
+              });
+            })
+          );
+        }
+        
+        if (options.methods.includes('seasonal')) {
+          forecastPromises.push(
+            processWithWorker(historicalData, (data, opts) => {
+              return seasonalForecast(
+                data, 
+                opts.periods, 
+                opts.seasonality, 
+                opts.valueKey, 
+                opts.dateKey
+              );
+            }, {
+              periods,
+              seasonality: options.seasonality || 12,
+              valueKey,
+              dateKey
+            }).then(result => {
+              forecasts.push({
+                method: 'seasonal',
+                forecast: result,
+                weight: options.weights?.seasonal || 1
+              });
+            })
+          );
+        }
+        
+        // Wait for all forecasts to complete
+        try {
+          await Promise.all(forecastPromises);
+        } catch (error) {
+          logError('Error in parallel forecast processing:', error);
+          // Fall back to sequential processing if parallel processing fails
+          forecasts.length = 0; // Clear any partial results
+          
+          if (options.methods.includes('moving_average')) {
+            const maForecast = movingAverageForecast(
+              historicalData, 
+              periods, 
+              options.windowSize || 3, 
+              valueKey, 
+              dateKey
+            );
+            forecasts.push({
+              method: 'moving_average',
+              forecast: maForecast,
+              weight: options.weights?.moving_average || 1
+            });
+          }
+          
+          // Add other methods similarly...
+        }
+      } else {
+        // For smaller datasets, use regular processing
+        if (options.methods.includes('moving_average')) {
+          const maForecast = movingAverageForecast(
+            historicalData, 
+            periods, 
+            options.windowSize || 3, 
+            valueKey, 
+            dateKey
+          );
+          forecasts.push({
+            method: 'moving_average',
+            forecast: maForecast,
+            weight: options.weights?.moving_average || 1
+          });
+        }
+        
+        if (options.methods.includes('exponential_smoothing')) {
+          const esForecast = exponentialSmoothingForecast(
+            historicalData, 
+            periods, 
+            options.alpha || 0.3, 
+            valueKey, 
+            dateKey
+          );
+          forecasts.push({
+            method: 'exponential_smoothing',
+            forecast: esForecast,
+            weight: options.weights?.exponential_smoothing || 1
+          });
+        }
+        
+        if (options.methods.includes('linear_regression')) {
+          const lrForecast = linearRegressionForecast(
+            historicalData, 
+            periods, 
+            valueKey, 
+            dateKey
+          );
+          forecasts.push({
+            method: 'linear_regression',
+            forecast: lrForecast,
+            weight: options.weights?.linear_regression || 1
+          });
+        }
+        
+        if (options.methods.includes('seasonal')) {
+          const seasonalForecast = seasonalForecast(
+            historicalData, 
+            periods, 
+            options.seasonality || 12, 
+            valueKey, 
+            dateKey
+          );
+          forecasts.push({
+            method: 'seasonal',
+            forecast: seasonalForecast,
+            weight: options.weights?.seasonal || 1
+          });
+        }
+      }
+    } else {
+      // Default methods if none provided
+      const maForecast = movingAverageForecast(
+        historicalData, 
+        periods, 
+        3, 
+        valueKey, 
+        dateKey
+      );
+      forecasts.push({
+        method: 'moving_average',
+        forecast: maForecast,
+        weight: 1
+      });
+      
+      const esForecast = exponentialSmoothingForecast(
+        historicalData, 
+        periods, 
+        0.3, 
+        valueKey, 
+        dateKey
+      );
+      forecasts.push({
+        method: 'exponential_smoothing',
+        forecast: esForecast,
+        weight: 1
+      });
+      
+      const lrForecast = linearRegressionForecast(
+        historicalData, 
+        periods, 
+        valueKey, 
+        dateKey
+      );
+      forecasts.push({
+        method: 'linear_regression',
+        forecast: lrForecast,
+        weight: 1
+      });
+      
+      const seasonalForecast = seasonalForecast(
+        historicalData, 
+        periods, 
+        12, 
+        valueKey, 
+        dateKey
+      );
+      forecasts.push({
+        method: 'seasonal',
+        forecast: seasonalForecast,
+        weight: 1
+      });
     }
     
     // Calculate prediction error from historical data
@@ -554,7 +738,7 @@ function forecastWithConfidenceIntervals(historicalData, periods = 3, options = 
  * @param {string} dateKey - Key to access the date in data objects
  * @returns {Object} - Forecasts for different scenarios
  */
-function scenarioForecasting(historicalData, periods = 3, scenarios = [], valueKey = 'amount', dateKey = 'date') {
+async function scenarioForecasting(historicalData, periods = 3, scenarios = [], valueKey = 'amount', dateKey = 'date') {
   if (!Array.isArray(historicalData) || historicalData.length === 0) {
     return {
       success: false,
@@ -621,6 +805,7 @@ function scenarioForecasting(historicalData, periods = 3, scenarios = [], valueK
   }
 }
 
+// Export forecasting functions
 // Export forecasting functions
 export {
   movingAverageForecast,

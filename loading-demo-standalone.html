@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading States & Transitions Demo - SaleOrderForecast</title>
+  
+  <style>
+    /* CSS Variables */
+    :root {
+      --color-primary: #4a6cf7;
+      --color-primary-dark: #3a5ce5;
+      --color-secondary: #6c757d;
+      --color-secondary-dark: #5a6268;
+      --color-success: #28a745;
+      --color-success-dark: #218838;
+      --color-success-light: #d4edda;
+      --color-success-rgb: 40, 167, 69;
+      --color-danger: #dc3545;
+      --color-danger-dark: #c82333;
+      --color-danger-light: #f8d7da;
+      --color-danger-rgb: 220, 53, 69;
+      --color-warning: #ffc107;
+      --color-warning-dark: #e0a800;
+      --color-info: #17a2b8;
+      --color-info-dark: #138496;
+      --color-light: #f8f9fa;
+      --color-dark: #343a40;
+      --color-text: #212529;
+      --color-text-muted: #6c757d;
+      --color-border: #dee2e6;
+      --color-border-light: #f1f1f1;
+      --color-border-dark: #adb5bd;
+      --color-background: #ffffff;
+      --color-background-light: #f8f9fa;
+      --color-background-dark: #343a40;
+    }
+    
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text: #f8f9fa;
+        --color-text-muted: #adb5bd;
+        --color-border: #495057;
+        --color-border-light: #343a40;
+        --color-border-dark: #6c757d;
+        --color-background: #212529;
+        --color-background-light: #343a40;
+        --color-background-dark: #1a1d20;
+      }
+    }
+    
+    /* Base Styles */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      color: var(--color-text);
+      background-color: var(--color-background);
+      margin: 0;
+      padding: 0;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+    
+    .main-header {
+      background-color: var(--color-primary);
+      color: white;
+      padding: 20px 0;
+      margin-bottom: 30px;
+    }
+    
+    .main-footer {
+      background-color: var(--color-background-light);
+      border-top: 1px solid var(--color-border);
+      padding: 20px 0;
+      margin-top: 30px;
+      text-align: center;
+      color: var(--color-text-muted);
+    }
+    
+    /* Loading States CSS */
+    /* Loading Overlay */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.8);
+      z-index: 10;
+      border-radius: 4px;
+    }
+    
+    .loading-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background-color: var(--color-background);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--color-border);
+      border-top: 4px solid var(--color-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+    
+    .loading-message {
+      font-size: 14px;
+      color: var(--color-text);
+      text-align: center;
+      max-width: 200px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Error Message */
+    .error-message {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      padding: 10px 15px;
+      background-color: var(--color-danger-light);
+      color: var(--color-danger);
+      border-left: 4px solid var(--color-danger);
+      font-size: 14px;
+      display: none;
+      animation: slideUp 0.3s ease-out;
+      z-index: 5;
+    }
+    
+    /* Success Message */
+    .success-message {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      padding: 10px 15px;
+      background-color: var(--color-success-light);
+      color: var(--color-success);
+      border-left: 4px solid var(--color-success);
+      font-size: 14px;
+      display: none;
+      animation: slideUp 0.3s ease-out;
+      z-index: 5;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    /* Loading State Classes */
+    .is-loading {
+      position: relative;
+      pointer-events: none;
+    }
+    
+    .is-loading > *:not(.loading-overlay) {
+      opacity: 0.6;
+    }
+    
+    .has-error {
+      border-color: var(--color-danger);
+    }
+    
+    .is-success {
+      border-color: var(--color-success);
+    }
+    
+    /* Button Loading State */
+    button.is-loading {
+      color: transparent !important;
+    }
+    
+    button.is-loading::after {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      top: calc(50% - 8px);
+      left: calc(50% - 8px);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    /* Demo-specific styles */
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .demo-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background-color: var(--color-background);
+    }
+    
+    .demo-section h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .demo-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
+    }
+    
+    .demo-card {
+      padding: 15px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      background-color: var(--color-background-light);
+      cursor: pointer;
+      position: relative;
+      min-height: 120px;
+    }
+    
+    .demo-card:hover {
+      border-color: var(--color-primary);
+    }
+    
+    .transition-controls {
+      margin-bottom: 15px;
+    }
+    
+    .transition-container {
+      position: relative;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      min-height: 150px;
+      overflow: hidden;
+    }
+    
+    .section {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 20px;
+      background-color: var(--color-background-light);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    .section.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    .skeleton-container {
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 20px;
+      margin-top: 15px;
+    }
+    
+    /* Skeleton Loading */
+    .skeleton {
+      background: linear-gradient(90deg, 
+        var(--color-border-light) 25%, 
+        var(--color-border) 37%, 
+        var(--color-border-light) 63%
+      );
+      background-size: 400% 100%;
+      animation: skeleton-loading 1.4s ease infinite;
+      border-radius: 4px;
+    }
+    
+    .skeleton-text {
+      height: 16px;
+      margin-bottom: 8px;
+      width: 100%;
+    }
+    
+    .skeleton-text.short {
+      width: 60%;
+    }
+    
+    .skeleton-rectangle {
+      width: 100%;
+      height: 120px;
+    }
+    
+    @keyframes skeleton-loading {
+      0% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0 50%;
+      }
+    }
+    
+    /* Utility classes */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    }
+    
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--color-primary-dark);
+    }
+    
+    .btn-secondary {
+      background-color: var(--color-secondary);
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background-color: var(--color-secondary-dark);
+    }
+    
+    .btn-success {
+      background-color: var(--color-success);
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background-color: var(--color-success-dark);
+    }
+    
+    .btn-outline-primary {
+      background-color: transparent;
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+    
+    .btn-outline-primary:hover {
+      background-color: var(--color-primary);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <header class="main-header">
+    <div class="container">
+      <h1>Loading States & Transitions Demo</h1>
+      <p>This page demonstrates the various loading states and transitions available in the SaleOrderForecast application.</p>
+    </div>
+  </header>
+  
+  <main class="demo-container">
+    <div class="demo-section">
+      <h3>Button Loading States</h3>
+      <div class="button-group">
+        <button id="demo-button-1" class="btn btn-primary">Simple Loading</button>
+        <button id="demo-button-2" class="btn btn-secondary">Loading with Text</button>
+        <button id="demo-button-3" class="btn btn-success">Async Operation</button>
+      </div>
+    </div>
+    
+    <div class="demo-section">
+      <h3>Element Loading States</h3>
+      <div class="demo-cards">
+        <div id="demo-card-1" class="demo-card">
+          <h4>Loading Overlay</h4>
+          <p>Click to show loading overlay</p>
+        </div>
+        <div id="demo-card-2" class="demo-card">
+          <h4>Error State</h4>
+          <p>Click to show error state</p>
+        </div>
+        <div id="demo-card-3" class="demo-card">
+          <h4>Success State</h4>
+          <p>Click to show success state</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="demo-section">
+      <h3>Section Transitions</h3>
+      <div class="transition-controls">
+        <button id="transition-fade" class="btn btn-outline-primary">Fade</button>
+        <button id="transition-slide" class="btn btn-outline-primary">Slide</button>
+        <button id="transition-slide-up" class="btn btn-outline-primary">Slide Up</button>
+      </div>
+      <div id="transition-container" class="transition-container">
+        <div id="section-1" class="section active">
+          <h4>Section 1</h4>
+          <p>This is the first section content.</p>
+        </div>
+        <div id="section-2" class="section">
+          <h4>Section 2</h4>
+          <p>This is the second section content.</p>
+        </div>
+        <div id="section-3" class="section">
+          <h4>Section 3</h4>
+          <p>This is the third section content.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="demo-section">
+      <h3>Skeleton Loading</h3>
+      <button id="toggle-skeleton" class="btn btn-primary">Toggle Skeleton</button>
+      <div id="skeleton-container" class="skeleton-container">
+        <div id="skeleton-content" class="skeleton-content">
+          <h4>Content Title</h4>
+          <p>This is the actual content that will be shown after loading.</p>
+          <p>It contains multiple paragraphs of information.</p>
+          <div class="content-image">
+            <img src="https://via.placeholder.com/300x200" alt="Content image">
+          </div>
+        </div>
+        <div id="skeleton-loading" class="skeleton-loading" style="display: none;">
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text short"></div>
+          <div class="skeleton skeleton-text short"></div>
+          <div class="skeleton skeleton-rectangle"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <footer class="main-footer">
+    <div class="container">
+      <p>&copy; 2023 SaleOrderForecast. All rights reserved.</p>
+    </div>
+  </footer>
+  
+  <script>
+    // Simple loading state manager
+    function createLoadingManager() {
+      // Show loading overlay
+      function setLoading(element, isLoading, message = 'Loading...') {
+        if (!element) return;
+        
+        // Add loading class
+        element.classList.toggle('is-loading', isLoading);
+        
+        // Get or create loading overlay
+        let overlay = element.querySelector('.loading-overlay');
+        
+        if (!overlay && isLoading) {
+          overlay = document.createElement('div');
+          overlay.className = 'loading-overlay';
+          overlay.innerHTML = `
+            <div class="loading-content">
+              <div class="loading-spinner"></div>
+              <div class="loading-message">${message}</div>
+            </div>
+          `;
+          element.appendChild(overlay);
+        }
+        
+        if (overlay) {
+          // Update message if provided
+          const messageEl = overlay.querySelector('.loading-message');
+          if (messageEl && message) {
+            messageEl.textContent = message;
+          }
+          
+          // Show/hide overlay
+          overlay.style.display = isLoading ? 'flex' : 'none';
+        }
+        
+        return {
+          setLoading: (loading) => setLoading(element, loading, message),
+          setMessage: (newMessage) => {
+            if (overlay) {
+              const messageEl = overlay.querySelector('.loading-message');
+              if (messageEl) {
+                messageEl.textContent = newMessage;
+              }
+            }
+          }
+        };
+      }
+      
+      // Show error message
+      function showError(element, message, autoHide = true) {
+        if (!element) return;
+        
+        // Remove loading state
+        setLoading(element, false);
+        
+        // Remove existing error/success messages
+        const existingMessages = element.querySelectorAll('.error-message, .success-message');
+        existingMessages.forEach(el => el.remove());
+        
+        // Create error message
+        const errorEl = document.createElement('div');
+        errorEl.className = 'error-message';
+        errorEl.textContent = message;
+        
+        // Add to element
+        element.appendChild(errorEl);
+        element.classList.add('has-error');
+        
+        // Show message
+        setTimeout(() => {
+          errorEl.style.display = 'block';
+        }, 10);
+        
+        // Auto-hide after delay
+        if (autoHide) {
+          setTimeout(() => {
+            errorEl.style.display = 'none';
+            setTimeout(() => {
+              if (errorEl.parentNode === element) {
+                element.removeChild(errorEl);
+              }
+              element.classList.remove('has-error');
+            }, 300);
+          }, 3000);
+        }
+        
+        return {
+          hide: () => {
+            errorEl.style.display = 'none';
+            setTimeout(() => {
+              if (errorEl.parentNode === element) {
+                element.removeChild(errorEl);
+              }
+              element.classList.remove('has-error');
+            }, 300);
+          }
+        };
+      }
+      
+      // Show success message
+      function showSuccess(element, message, autoHide = true) {
+        if (!element) return;
+        
+        // Remove loading state
+        setLoading(element, false);
+        
+        // Remove existing error/success messages
+        const existingMessages = element.querySelectorAll('.error-message, .success-message');
+        existingMessages.forEach(el => el.remove());
+        
+        // Create success message
+        const successEl = document.createElement('div');
+        successEl.className = 'success-message';
+        successEl.textContent = message;
+        
+        // Add to element
+        element.appendChild(successEl);
+        element.classList.add('is-success');
+        
+        // Show message
+        setTimeout(() => {
+          successEl.style.display = 'block';
+        }, 10);
+        
+        // Auto-hide after delay
+        if (autoHide) {
+          setTimeout(() => {
+            successEl.style.display = 'none';
+            setTimeout(() => {
+              if (successEl.parentNode === element) {
+                element.removeChild(successEl);
+              }
+              element.classList.remove('is-success');
+            }, 300);
+          }, 3000);
+        }
+        
+        return {
+          hide: () => {
+            successEl.style.display = 'none';
+            setTimeout(() => {
+              if (successEl.parentNode === element) {
+                element.removeChild(successEl);
+              }
+              element.classList.remove('is-success');
+            }, 300);
+          }
+        };
+      }
+      
+      return {
+        setLoading,
+        showError,
+        showSuccess
+      };
+    }
+    
+    // Create button loading state
+    function createButtonLoadingState(button, options = {}) {
+      if (!button) return null;
+      
+      const {
+        loadingText = '',
+        resetText = null,
+        disableWhileLoading = true
+      } = options;
+      
+      // Store original text
+      const originalText = button.textContent;
+      let isLoading = false;
+      
+      // Set loading state
+      function setLoading(loading) {
+        isLoading = loading;
+        
+        if (loading) {
+          // Store original text if not already stored
+          button.dataset.originalText = button.textContent;
+          
+          // Set loading state
+          button.classList.add('is-loading');
+          
+          if (loadingText) {
+            button.textContent = loadingText;
+          }
+          
+          if (disableWhileLoading) {
+            button.disabled = true;
+          }
+        } else {
+          // Remove loading state
+          button.classList.remove('is-loading');
+          
+          // Restore text
+          if (resetText !== null) {
+            button.textContent = resetText;
+          } else if (button.dataset.originalText) {
+            button.textContent = button.dataset.originalText;
+          }
+          
+          if (disableWhileLoading) {
+            button.disabled = false;
+          }
+        }
+      }
+      
+      // Wrap callback with loading state
+      function withLoading(callback) {
+        return async (...args) => {
+          if (isLoading) return;
+          
+          setLoading(true);
+          
+          try {
+            // Simulate async operation if callback is not async
+            if (callback.constructor.name !== 'AsyncFunction') {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              const result = callback(...args);
+              setLoading(false);
+              return result;
+            } else {
+              const result = await callback(...args);
+              setLoading(false);
+              return result;
+            }
+          } catch (error) {
+            setLoading(false);
+            throw error;
+          }
+        };
+      }
+      
+      return {
+        setLoading,
+        withLoading,
+        isLoading: () => isLoading,
+        reset: () => {
+          setLoading(false);
+          button.textContent = originalText;
+        }
+      };
+    }
+    
+    // Create section transition
+    function createSectionTransition(container, options = {}) {
+      if (!container) return null;
+      
+      const {
+        sectionSelector = '.section',
+        activeClass = 'active',
+        transitionDuration = 300,
+        defaultTransition = 'fade'
+      } = options;
+      
+      // Get all sections
+      const sections = container.querySelectorAll(sectionSelector);
+      let activeSection = null;
+      
+      // Find initial active section
+      sections.forEach(section => {
+        if (section.classList.contains(activeClass)) {
+          activeSection = section;
+        }
+      });
+      
+      // If no active section, set first section as active
+      if (!activeSection && sections.length > 0) {
+        activeSection = sections[0];
+        activeSection.classList.add(activeClass);
+      }
+      
+      // Show section with transition
+      function showSection(sectionId, transition = defaultTransition) {
+        const targetSection = typeof sectionId === 'string' 
+          ? container.querySelector(sectionId) 
+          : sectionId;
+        
+        if (!targetSection || targetSection === activeSection) return;
+        
+        // Apply transition classes
+        switch (transition) {
+          case 'slide':
+            targetSection.style.transform = 'translateX(100%)';
+            targetSection.style.opacity = '1';
+            
+            setTimeout(() => {
+              if (activeSection) {
+                activeSection.style.transform = 'translateX(-100%)';
+                activeSection.classList.remove(activeClass);
+              }
+              
+              targetSection.style.transform = 'translateX(0)';
+              targetSection.classList.add(activeClass);
+              activeSection = targetSection;
+            }, 10);
+            break;
+            
+          case 'slideUp':
+            targetSection.style.transform = 'translateY(30px)';
+            targetSection.style.opacity = '0';
+            
+            setTimeout(() => {
+              if (activeSection) {
+                activeSection.style.transform = 'translateY(-30px)';
+                activeSection.style.opacity = '0';
+                activeSection.classList.remove(activeClass);
+              }
+              
+              targetSection.style.transform = 'translateY(0)';
+              targetSection.style.opacity = '1';
+              targetSection.classList.add(activeClass);
+              activeSection = targetSection;
+            }, 10);
+            break;
+            
+          case 'fade':
+          default:
+            targetSection.style.opacity = '0';
+            
+            setTimeout(() => {
+              if (activeSection) {
+                activeSection.classList.remove(activeClass);
+              }
+              
+              targetSection.style.opacity = '1';
+              targetSection.classList.add(activeClass);
+              activeSection = targetSection;
+            }, 10);
+            break;
+        }
+      }
+      
+      return {
+        showSection,
+        getActiveSection: () => activeSection
+      };
+    }
+    
+    // Initialize demo when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      const loadingManager = createLoadingManager();
+      
+      // Button loading demo
+      const button1 = document.getElementById('demo-button-1');
+      const button1Loading = createButtonLoadingState(button1);
+      
+      button1.addEventListener('click', () => {
+        button1Loading.setLoading(true);
+        
+        setTimeout(() => {
+          button1Loading.setLoading(false);
+        }, 2000);
+      });
+      
+      const button2 = document.getElementById('demo-button-2');
+      const button2Loading = createButtonLoadingState(button2, {
+        loadingText: 'Processing...'
+      });
+      
+      button2.addEventListener('click', () => {
+        button2Loading.setLoading(true);
+        
+        setTimeout(() => {
+          button2Loading.setLoading(false);
+        }, 2000);
+      });
+      
+      const button3 = document.getElementById('demo-button-3');
+      const button3Loading = createButtonLoadingState(button3);
+      
+      button3.addEventListener('click', button3Loading.withLoading(async () => {
+        // Simulate async operation
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return 'Operation completed';
+      }));
+      
+      // Element loading demo
+      const card1 = document.getElementById('demo-card-1');
+      
+      card1.addEventListener('click', () => {
+        const loading = loadingManager.setLoading(card1, true, 'Loading data...');
+        
+        setTimeout(() => {
+          loading.setLoading(false);
+        }, 2000);
+      });
+      
+      const card2 = document.getElementById('demo-card-2');
+      
+      card2.addEventListener('click', () => {
+        loadingManager.showError(card2, 'Failed to load data. Please try again.');
+      });
+      
+      const card3 = document.getElementById('demo-card-3');
+      
+      card3.addEventListener('click', () => {
+        loadingManager.showSuccess(card3, 'Data loaded successfully!');
+      });
+      
+      // Section transitions demo
+      const transitionContainer = document.getElementById('transition-container');
+      const sectionTransition = createSectionTransition(transitionContainer, {
+        sectionSelector: '.section',
+        activeClass: 'active',
+        transitionDuration: 300,
+        defaultTransition: 'fade'
+      });
+      
+      const fadeButton = document.getElementById('transition-fade');
+      const slideButton = document.getElementById('transition-slide');
+      const slideUpButton = document.getElementById('transition-slide-up');
+      
+      let currentSectionIndex = 1;
+      
+      fadeButton.addEventListener('click', () => {
+        currentSectionIndex = (currentSectionIndex % 3) + 1;
+        sectionTransition.showSection(`#section-${currentSectionIndex}`, 'fade');
+      });
+      
+      slideButton.addEventListener('click', () => {
+        currentSectionIndex = (currentSectionIndex % 3) + 1;
+        sectionTransition.showSection(`#section-${currentSectionIndex}`, 'slide');
+      });
+      
+      slideUpButton.addEventListener('click', () => {
+        currentSectionIndex = (currentSectionIndex % 3) + 1;
+        sectionTransition.showSection(`#section-${currentSectionIndex}`, 'slideUp');
+      });
+      
+      // Skeleton loading demo
+      const toggleButton = document.getElementById('toggle-skeleton');
+      const skeletonContent = document.getElementById('skeleton-content');
+      const skeletonLoading = document.getElementById('skeleton-loading');
+      
+      toggleButton.addEventListener('click', () => {
+        const isLoading = skeletonLoading.style.display !== 'none';
+        
+        if (isLoading) {
+          // Show content
+          skeletonLoading.style.display = 'none';
+          skeletonContent.style.display = 'block';
+        } else {
+          // Show skeleton
+          skeletonLoading.style.display = 'block';
+          skeletonContent.style.display = 'none';
+          
+          // Automatically switch back after 2 seconds
+          setTimeout(() => {
+            skeletonLoading.style.display = 'none';
+            skeletonContent.style.display = 'block';
+          }, 2000);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
